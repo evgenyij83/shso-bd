@@ -1,0 +1,45 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  binaryTargets = ["native", "rhel-openssl-3.0.x", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id         String   @id @default(cuid())
+  uniqueCode String   @unique
+  role       String   // "UNIVERSITY_ADMIN", "HQ_COMMANDER", "SQUAD_COMMANDER"
+  squadId    String?  
+  squad      Squad?   @relation(fields: [squadId], references: [id])
+}
+
+model Squad {
+  id        String    @id @default(cuid())
+  name      String    @unique
+  users     User[]
+  fighters  Fighter[]
+}
+
+model Fighter {
+  id            String  @id @default(cuid())
+  squadId       String
+  squad         Squad   @relation(fields: [squadId], references: [id], onDelete: Cascade)
+  position      String  // "Боец", "Командир", "Комиссар"
+  fullName      String
+  faculty       String
+  studyGroup    String
+  course        Int
+  educationForm String  // "Бюджет", "Целевое", "Коммерческое"
+  phone         String
+  vkLink        String?
+}
