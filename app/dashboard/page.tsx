@@ -23,27 +23,44 @@ export default async function DashboardPage() {
     ORDER BY s.name ASC
   ` as any[]
 
+  const hqUsers = await sql`SELECT role, "fullName" FROM "User" WHERE role IN ('HQ_COMMANDER', 'HQ_COMMISSAR')` as any[]
+  const hqCommander = hqUsers.find((u: any) => u.role === 'HQ_COMMANDER')?.fullName || 'Не назначен'
+  const hqCommissar = hqUsers.find((u: any) => u.role === 'HQ_COMMISSAR')?.fullName || 'Не назначен'
+
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
         <h2>Сводка по всем отрядам</h2>
         {session.role === 'UNIVERSITY_ADMIN' && <CreateSquadButton />}
         {(session.role === 'UNIVERSITY_ADMIN' || session.role === 'DEVELOPER' || session.role === 'HQ_COMMANDER' || session.role === 'HQ_COMMISSAR') && (
-          <ExportModal squads={squads.map(s => ({ id: s.id, name: s.name }))} isGlobal={true} />
+          <ExportModal squads={squads.map((s: any) => ({ id: s.id, name: s.name }))} isGlobal={true} />
         )}
       </div>
       
-      { (session.role === 'UNIVERSITY_ADMIN' || session.role === 'DEVELOPER') && (
-        <div className="glass-panel" style={{ marginTop: '2rem', padding: '1.5rem', background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.3)', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+      { (session.role === 'UNIVERSITY_ADMIN' || session.role === 'DEVELOPER' || session.role === 'HQ_COMMANDER' || session.role === 'HQ_COMMISSAR') && (
+        <div className="glass-panel" style={{ marginTop: '2rem', padding: '1.5rem', background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.3)', display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
           <div style={{ background: 'rgba(59, 130, 246, 0.2)', padding: '12px', borderRadius: '12px' }}>
             <Users size={24} color="#60a5fa" />
           </div>
           <div>
             <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '4px' }}>Общая численность всех отрядов</div>
             <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#60a5fa' }}>
-              {squads.reduce((acc, s) => acc + parseInt(s.fightersCount || '0', 10), 0)} чел.
+              {squads.reduce((acc: number, s: any) => acc + parseInt(s.fightersCount || '0', 10), 0)} чел.
             </div>
           </div>
+          
+          { (session.role === 'UNIVERSITY_ADMIN' || session.role === 'DEVELOPER') && (
+            <div style={{ marginLeft: 'auto', display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+              <div style={{ background: 'rgba(255,255,255,0.05)', padding: '0.75rem 1.25rem', borderRadius: '8px' }}>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '2px' }}>Командир штаба</div>
+                <div style={{ fontWeight: 500, color: 'var(--text-primary)' }}>{hqCommander}</div>
+              </div>
+              <div style={{ background: 'rgba(255,255,255,0.05)', padding: '0.75rem 1.25rem', borderRadius: '8px' }}>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '2px' }}>Комиссар штаба</div>
+                <div style={{ fontWeight: 500, color: 'var(--text-primary)' }}>{hqCommissar}</div>
+              </div>
+            </div>
+          )}
         </div>
       )}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem', marginTop: '2rem' }}>

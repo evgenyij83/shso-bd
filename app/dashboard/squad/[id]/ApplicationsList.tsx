@@ -50,7 +50,9 @@ export default function ApplicationsList({ applications, squadId, canEdit }: { a
                   disabled={loadingId === app.id}
                   onClick={async () => {
                     setLoadingId(app.id)
-                    await acceptApplication(app.id, squadId)
+                    const res = await acceptApplication(app.id, squadId)
+                    if (res?.warning) alert(res.warning)
+                    if (res?.error) alert(res.error)
                     setLoadingId(null)
                   }}
                 >

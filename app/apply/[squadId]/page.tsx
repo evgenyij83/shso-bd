@@ -17,6 +17,9 @@ export default async function SquadApplyPage(props: { params: Promise<{ squadId:
     )
   }
 
+  const statuteResult = await sql`SELECT value FROM "SystemSettings" WHERE key = 'STATUTE'`
+  const statute = statuteResult.length > 0 ? statuteResult[0].value : 'Устав еще не добавлен.'
+
   return (
     <div style={{ padding: '2rem', maxWidth: '1200px', margin: '0 auto' }}>
       <header style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem' }}>
@@ -26,7 +29,7 @@ export default async function SquadApplyPage(props: { params: Promise<{ squadId:
         <h2>Подача заявки</h2>
       </header>
       
-      <ApplicationForm squadId={squad.id} squadName={squad.name} />
+      <ApplicationForm squadId={squad.id} squadName={squad.name} statute={statute} />
     </div>
   )
 }

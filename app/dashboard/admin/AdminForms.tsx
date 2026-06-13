@@ -5,7 +5,7 @@ import { addSquad, addUser, deleteUser, deleteSquad } from '@/app/actions/admin'
 import { Trash2 } from 'lucide-react'
 
 type Squad = { id: string, name: string }
-type User = { id: string, uniqueCode: string, role: string, squadName?: string }
+type User = { id: string, uniqueCode: string, role: string, squadName?: string, fullName?: string | null }
 
 export default function AdminForms({ squads, users = [] }: { squads: Squad[], users?: User[] }) {
   const [squadLoading, setSquadLoading] = useState(false)
@@ -132,8 +132,12 @@ export default function AdminForms({ squads, users = [] }: { squads: Squad[], us
             {(selectedRole === 'SQUAD_COMMANDER' || selectedRole === 'SQUAD_COMMISSAR' || selectedRole === 'HQ_COMMANDER' || selectedRole === 'HQ_COMMISSAR') && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '0.5rem', background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '8px' }}>
                 <h4 style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '-0.5rem' }}>Данные для списка отряда:</h4>
-                <select name="squadId" className="input-field" required>
-                  <option value="">-- Выберите отряд --</option>
+                <select 
+                  name="squadId" 
+                  className="input-field" 
+                  required={selectedRole === 'SQUAD_COMMANDER' || selectedRole === 'SQUAD_COMMISSAR'}
+                >
+                  <option value="">-- Выберите отряд -- {(selectedRole === 'HQ_COMMANDER' || selectedRole === 'HQ_COMMISSAR') && '(опционально)'}</option>
                   {squads.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                 </select>
                 
@@ -171,6 +175,7 @@ export default function AdminForms({ squads, users = [] }: { squads: Squad[], us
               <tr style={{ borderBottom: '1px solid var(--glass-border)' }}>
                 <th style={{ padding: '1rem 0.5rem', color: 'var(--text-secondary)' }}>Код доступа</th>
                 <th style={{ padding: '1rem 0.5rem', color: 'var(--text-secondary)' }}>Роль</th>
+                <th style={{ padding: '1rem 0.5rem', color: 'var(--text-secondary)' }}>ФИО</th>
                 <th style={{ padding: '1rem 0.5rem', color: 'var(--text-secondary)' }}>Отряд</th>
                 <th style={{ padding: '1rem 0.5rem', color: 'var(--text-secondary)', textAlign: 'right' }}>Действия</th>
               </tr>
@@ -180,6 +185,7 @@ export default function AdminForms({ squads, users = [] }: { squads: Squad[], us
                 <tr key={u.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                   <td style={{ padding: '1rem 0.5rem', fontWeight: 500 }}>{u.uniqueCode}</td>
                   <td style={{ padding: '1rem 0.5rem' }}>{roleLabels[u.role] || u.role}</td>
+                  <td style={{ padding: '1rem 0.5rem' }}>{u.role === 'DEVELOPER' ? 'KiritoNagibator' : u.fullName || '—'}</td>
                   <td style={{ padding: '1rem 0.5rem' }}>
                     {u.squadName ? u.squadName : 
                      (u.role === 'HQ_COMMANDER' || u.role === 'HQ_COMMISSAR') ? 'Штаб' : 
@@ -205,7 +211,7 @@ export default function AdminForms({ squads, users = [] }: { squads: Squad[], us
               ))}
               {users.length === 0 && (
                 <tr>
-                  <td colSpan={4} style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                  <td colSpan={5} style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
                     Нет созданных аккаунтов
                   </td>
                 </tr>

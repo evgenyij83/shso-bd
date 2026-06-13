@@ -5,6 +5,15 @@ import { getSession } from './auth'
 import { revalidatePath } from 'next/cache'
 import { sendVkMessage } from '@/lib/vkBot'
 
+const roleLabels: Record<string, string> = {
+  'DEVELOPER': 'разработчик',
+  'UNIVERSITY_ADMIN': 'руководитель с университета',
+  'HQ_COMMANDER': 'командир штаба',
+  'HQ_COMMISSAR': 'комиссар штаба',
+  'SQUAD_COMMANDER': 'командир отряда',
+  'SQUAD_COMMISSAR': 'комиссар отряда'
+}
+
 export async function acceptApplication(applicationId: string, squadId: string) {
   const session = await getSession()
   if (!session) return { error: 'Не авторизован' }
@@ -41,12 +50,25 @@ export async function acceptApplication(applicationId: string, squadId: string) 
     // Удаляем заявку
     await sql`DELETE FROM "Application" WHERE id = ${applicationId}`
 
-    const squadInfo = await sql`SELECT name FROM "Squad" WHERE id = ${squadId}`
+    const squadInfo = await sql`SELECT name, "chatLink" FROM "Squad" WHERE id = ${squadId}`
     const squadName = squadInfo[0]?.name || 'отряд'
-    await sendVkMessage(app.vkLink, `Ваша заявка на вступление в ${squadName} одобрена.`)
+    const chatLink = squadInfo[0]?.chatLink
+
+    const roleName = roleLabels[session.role] || 'администратор'
+    const actorName = session.fullName || 'Имя не указано'
+    const actorString = `\n\nДействие совершил(а): ${roleName} "${actorName}"`
+    
+    let chatMessage = ''
+    if (chatLink) {
+      chatMessage = `\n\nПрисоединяйся к рабочему чату отряда ${squadName} - ${chatLink}`
+    } else {
+      chatMessage = `\n\nСсылка на рабочий чат отряда скоро появится.`
+    }
+
+    await sendVkMessage(app.vkLink, `Ваша заявка на вступление в ${squadName} одобрена.${chatMessage}${actorString}`)
 
     revalidatePath(`/dashboard/squad/${squadId}`)
-    return { success: true }
+    return { success: true, warning: positionToAssign === 'Кандидат' ? `Лимит бойцов исчерпан. Кандидат был добавлен со статусом "Кандидат".` : undefined }
   } catch (e) {
     console.error(e)
     return { error: 'Ошибка при принятии заявки' }
@@ -69,9 +91,13 @@ export async function rejectApplication(applicationId: string, squadId: string, 
     const squadInfo = await sql`SELECT name FROM "Squad" WHERE id = ${squadId}`
     const squadName = squadInfo[0]?.name || 'отряд'
 
+    const roleName = roleLabels[session.role] || 'администратор'
+    const actorName = session.fullName || 'Имя не указано'
+    const actorString = `\n\nДействие совершил(а): ${roleName} "${actorName}"`
+
     await sql`DELETE FROM "Application" WHERE id = ${applicationId}`
 
-    await sendVkMessage(app.vkLink, `Ваша заявка на вступление в ${squadName} отклонена.\nПричина: ${reason}`)
+    await sendVkMessage(app.vkLink, `Ваша заявка на вступление в ${squadName} отклонена.\nПричина: ${reason}${actorString}`)
 
     revalidatePath(`/dashboard/squad/${squadId}`)
     return { success: true }

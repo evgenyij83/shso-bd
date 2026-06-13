@@ -35,7 +35,7 @@ export async function addUser(formData: FormData) {
   const isHQ = role === 'HQ_COMMANDER' || role === 'HQ_COMMISSAR'
   const isFormRole = isSquadCommander || isHQ
 
-  if (isFormRole && !squadId) return { error: 'Для этой роли необходимо выбрать отряд' }
+  if (isSquadCommander && !squadId) return { error: 'Для этой роли необходимо выбрать отряд' }
 
   try {
     if (isSquadCommander && squadId) {
@@ -47,9 +47,17 @@ export async function addUser(formData: FormData) {
       if (existingFighter.length > 0) return { error: `В этом отряде уже есть ${position.toLowerCase()} в списке бойцов` }
     }
 
+    if (isHQ) {
+      const existingHQ = await sql`SELECT id FROM "User" WHERE role = ${role}`
+      if (existingHQ.length > 0) {
+        const position = role === 'HQ_COMMANDER' ? 'командира' : 'комиссара'
+        return { error: `Аккаунт ${position} штаба уже существует. Удалите старый аккаунт перед созданием нового.` }
+      }
+    }
+
     const fullName = formData.get('fullName') as string | null
 
-    await sql`INSERT INTO "User" (id, "uniqueCode", role, "squadId", "fullName") VALUES (gen_random_uuid(), ${uniqueCode}, ${role}, ${isFormRole ? squadId : null}, ${fullName})`
+    await sql`INSERT INTO "User" (id, "uniqueCode", role, "squadId", "fullName") VALUES (gen_random_uuid(), ${uniqueCode}, ${role}, ${squadId || null}, ${fullName})`
     
     // Автоматическое создание анкеты в списке бойцов
     if (isFormRole && squadId) {
@@ -129,6 +137,27 @@ export async function updateSquadDescription(formData: FormData) {
     return { success: true }
   } catch (e) {
     return { error: 'Ошибка при обновлении описания' }
+  }
+}
+
+export async function updateSquadChatLink(formData: FormData) {
+  const session = await getSession()
+  if (!session) return { error: 'Необходима авторизация' }
+
+  const squadId = formData.get('squadId') as string
+  const chatLink = formData.get('chatLink') as string
+
+  const isGlobalAdmin = ['DEVELOPER', 'UNIVERSITY_ADMIN', 'HQ_COMMANDER', 'HQ_COMMISSAR'].includes(session.role)
+  const isSquadAdmin = ['SQUAD_COMMANDER', 'SQUAD_COMMISSAR'].includes(session.role) && session.squadId === squadId
+
+  if (!isGlobalAdmin && !isSquadAdmin) return { error: 'Недостаточно прав' }
+
+  try {
+    await sql`UPDATE "Squad" SET "chatLink" = ${chatLink || null} WHERE id = ${squadId}`
+    revalidatePath(`/dashboard/squad/${squadId}`)
+    return { success: true }
+  } catch (e) {
+    return { error: 'Ошибка при обновлении ссылки на чат' }
   }
 }
 

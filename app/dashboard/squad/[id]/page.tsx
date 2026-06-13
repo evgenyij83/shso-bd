@@ -7,6 +7,7 @@ import ClientFighterList from './ClientFighterList'
 import ApplicationsList from './ApplicationsList'
 import EditDescriptionButton from './EditDescriptionButton'
 import EditFighterLimit from './EditFighterLimit'
+import EditChatLinkButton from './EditChatLinkButton'
 import ExportModal from '../../ExportModal'
 
 export default async function SquadPage(props: { params: Promise<{ id: string }> }) {
@@ -28,7 +29,9 @@ export default async function SquadPage(props: { params: Promise<{ id: string }>
       CASE position 
         WHEN 'Командир' THEN 1 
         WHEN 'Комиссар' THEN 2 
-        ELSE 3 
+        WHEN 'Боец' THEN 3
+        WHEN 'Кандидат' THEN 4
+        ELSE 5
       END, 
       "fullName" ASC
   ` as any[]
@@ -56,6 +59,7 @@ export default async function SquadPage(props: { params: Promise<{ id: string }>
       />
 
       {canEdit && <EditDescriptionButton squadId={squad.id} initialDescription={squad.description} />}
+      {canEdit && <EditChatLinkButton squadId={squad.id} initialLink={squad.chatLink} />}
       
       <ApplicationsList applications={applications} squadId={squad.id} canEdit={canEdit} />
       

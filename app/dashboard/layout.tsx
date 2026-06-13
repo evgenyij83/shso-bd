@@ -2,6 +2,8 @@ import { getSession, logout } from '@/app/actions/auth'
 import { redirect } from 'next/navigation'
 import { LogOut, Shield } from 'lucide-react'
 import Link from 'next/link'
+import sql from '@/lib/db'
+import ReadStatuteButton from './ReadStatuteButton'
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await getSession()
@@ -23,6 +25,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
     displayRole = `${roleLabels[session.role]} (${session.squadName})`
   }
 
+  const statuteResult = await sql`SELECT value FROM "SystemSettings" WHERE key = 'STATUTE'`
+  const statute = statuteResult.length > 0 ? statuteResult[0].value : ''
+
   return (
     <div className="layout-container">
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', padding: '1rem 1.5rem', background: 'rgba(30, 41, 59, 0.4)', backdropFilter: 'blur(10px)', borderRadius: '12px', border: '1px solid var(--glass-border)' }}>
@@ -34,6 +39,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <ReadStatuteButton statute={statute} />
           {session.role === 'DEVELOPER' && (
             <Link href="/dashboard/admin" style={{ color: 'var(--text-primary)', textDecoration: 'none', background: 'rgba(59, 130, 246, 0.2)', padding: '8px 16px', borderRadius: '8px', fontSize: '0.9rem' }}>
               Панель управления

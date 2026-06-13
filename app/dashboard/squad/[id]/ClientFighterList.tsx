@@ -32,7 +32,14 @@ export default function ClientFighterList({ fighters, squadId, canEdit, userRole
     const formData = new FormData(e.currentTarget)
     formData.append('squadId', squadId)
     const res = modalMode === 'add' ? await addFighter(formData) : await editFighter(formData)
-    if (res.error) { setError(res.error); setLoading(false) } else { setIsModalOpen(false); setLoading(false) }
+    if (res.error) { 
+      setError(res.error)
+      setLoading(false) 
+    } else { 
+      setIsModalOpen(false)
+      setLoading(false)
+      if (res.warning) alert(res.warning)
+    }
   }
 
   const canAddCommander = userRole === 'DEVELOPER' || userRole === 'UNIVERSITY_ADMIN' || userRole === 'HQ_COMMANDER'

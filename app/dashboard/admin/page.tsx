@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import AdminForms from './AdminForms'
+import StatuteEditor from './StatuteEditor'
 
 export default async function AdminPage() {
   const session = await getSession()
@@ -20,6 +21,9 @@ export default async function AdminPage() {
     ORDER BY u.role, u."uniqueCode"
   ` as any[]
 
+  const statuteResult = await sql`SELECT value FROM "SystemSettings" WHERE key = 'STATUTE'`
+  const statute = statuteResult.length > 0 ? statuteResult[0].value : ''
+
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem' }}>
@@ -28,6 +32,8 @@ export default async function AdminPage() {
       </div>
 
       <AdminForms squads={squads} users={users} />
+      
+      <StatuteEditor initialStatute={statute} />
     </div>
   )
 }
