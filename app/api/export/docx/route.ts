@@ -84,6 +84,7 @@ export async function POST(req: Request) {
           new Paragraph({ text: "" }), // empty line
           new Table({
             width: { size: 100, type: WidthType.PERCENTAGE },
+            columnWidths: [400, 2500, 1500, 1500, 1000, 600, 1200, 1300],
             rows: tableRows
           }),
           new Paragraph({ text: "" }), // spacing between squads
