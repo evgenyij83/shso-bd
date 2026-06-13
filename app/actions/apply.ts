@@ -18,8 +18,8 @@ export async function submitApplication(formData: FormData) {
 
   try {
     await sql`
-      INSERT INTO "Application" ("squadId", "fullName", "faculty", "studyGroup", "course", "educationForm", "phone", "vkLink") 
-      VALUES (${squadId}, ${fullName}, ${faculty}, ${studyGroup}, ${course}, ${educationForm}, ${phone}, ${vkLink})
+      INSERT INTO "Application" (id, "squadId", "fullName", "faculty", "studyGroup", "course", "educationForm", "phone", "vkLink") 
+      VALUES (gen_random_uuid(), ${squadId}, ${fullName}, ${faculty}, ${studyGroup}, ${course}, ${educationForm}, ${phone}, ${vkLink})
     `
     return { success: true }
   } catch (e) {
