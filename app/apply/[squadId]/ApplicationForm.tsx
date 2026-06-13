@@ -56,9 +56,13 @@ export default function ApplicationForm({ squadId, squadName }: { squadId: strin
           <option value="Целевое">Целевое</option>
           <option value="Коммерция">Коммерция</option>
         </select>
-
         <input name="phone" placeholder="Номер телефона" className="input-field" required />
         <input name="vkLink" placeholder="Ссылка на ВКонтакте (обязательно)" className="input-field" required />
+
+        <div style={{ background: 'rgba(59, 130, 246, 0.1)', borderLeft: '4px solid #3b82f6', padding: '1rem', borderRadius: '4px', marginTop: '1rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+          <strong style={{ color: 'var(--text-primary)', display: 'block', marginBottom: '0.5rem' }}>Уведомления о статусе заявки</strong>
+          Чтобы мы могли присылать вам уведомления о статусе вашей заявки (одобрение, отклонение), пожалуйста, разрешите сообщения от нашего <a href="https://vk.com/club239553821" target="_blank" rel="noreferrer" style={{ color: '#3b82f6', textDecoration: 'underline' }}>официального сообщества ВКонтакте</a> или напишите туда любое сообщение.
+        </div>
 
         {error && <div style={{ color: 'var(--danger-color)', fontSize: '0.9rem' }}>{error}</div>}
         
