@@ -8,7 +8,7 @@ export async function POST(request: Request) {
 
     // 1. Подтверждение сервера (VK Callback API)
     if (body.type === 'confirmation') {
-      const confirmationCode = process.env.VK_CONFIRMATION_CODE || ''
+      const confirmationCode = process.env.VK_CONFIRMATION_CODE || 'abd3d1db'
       return new NextResponse(confirmationCode, { status: 200, headers: { 'Content-Type': 'text/plain' } })
     }
 
