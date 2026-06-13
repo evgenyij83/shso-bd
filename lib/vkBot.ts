@@ -5,7 +5,25 @@ export async function sendVkMessage(vkLink: string | null | undefined, message: 
     // Временно вшиваем токен, чтобы работало сразу на Vercel без настройки переменных окружения
     const token = process.env.VK_BOT_TOKEN || 'vk1.a.ExVHjdLThGxCDYXG-YdBAlcrWkUBm9TIKrM_5qVpZ5dxfxtE_PGX91QZlFGz776t1eaknFsjW2L6-R5AYa4M79RH7jkaYuKxdywqvrLYS9D6FvN5_732xUj8DA6VECjEOfMFjdwGUa4zBSp5G8pi6wPWXPHZgoTJc_0CprCcp1n_oiAUiffjgUpqju2DzzS-3g8-QjPIAMdrwP2NaaluXQ';
 
-    let domain = vkLink.split('vk.com/').pop()?.split('/')[0]?.split('?')[0];
+    // Универсальная функция извлечения домена
+    let domain = vkLink.trim().replace(/\/+$/, '');
+    try {
+      if (domain.startsWith('http')) {
+        const parsedUrl = new URL(domain);
+        const pathParts = parsedUrl.pathname.split('/').filter(Boolean);
+        domain = pathParts[pathParts.length - 1];
+      } else {
+        const parts = domain.split('/').filter(Boolean);
+        domain = parts[parts.length - 1];
+      }
+    } catch (e) {
+      // Если что-то пошло не так, пробуем просто взять последний кусок
+      domain = domain.split('/').pop() || domain;
+    }
+    
+    // Очищаем от возможных параметров, если URL парсер не сработал
+    domain = domain.split('?')[0];
+
     if (!domain) return;
     
     let user_id;
