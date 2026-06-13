@@ -140,6 +140,11 @@ export async function setFighterLimit(formData: FormData) {
   const limitStr = formData.get('fighterLimit') as string
   const limit = limitStr && limitStr.trim() !== '' ? parseInt(limitStr, 10) : null
 
+  if (limit !== null) {
+    if (limit < 0) return { error: 'Лимит не может быть отрицательным' }
+    if (limit > 100) return { error: 'Лимит не может быть больше 100' }
+  }
+
   try {
     await sql`UPDATE "Squad" SET "fighterLimit" = ${limit} WHERE id = ${squadId}`
     revalidatePath(`/dashboard/squad/${squadId}`)

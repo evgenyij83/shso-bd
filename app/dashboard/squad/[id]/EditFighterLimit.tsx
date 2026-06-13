@@ -48,6 +48,8 @@ export default function EditFighterLimit({ squadId, currentLimit, canSetLimit }:
     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(59, 130, 246, 0.1)', padding: '1rem', borderRadius: '8px', border: '1px solid rgba(59, 130, 246, 0.3)', marginBottom: '1.5rem' }}>
       <input 
         type="number" 
+        min="0"
+        max="100"
         value={limit} 
         onChange={e => setLimit(e.target.value)} 
         placeholder="Без лимита (оставьте пустым)"
