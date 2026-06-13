@@ -107,3 +107,27 @@ export async function deleteSquad(id: string) {
   revalidatePath('/dashboard')
   return { success: true }
 }
+
+export async function updateSquadDescription(formData: FormData) {
+  const session = await getSession()
+  if (!session) return { error: 'Необходима авторизация' }
+
+  const squadId = formData.get('squadId') as string
+  const description = formData.get('description') as string
+
+  const isGlobalAdmin = ['DEVELOPER', 'UNIVERSITY_ADMIN', 'HQ_COMMANDER', 'HQ_COMMISSAR'].includes(session.role)
+  const isSquadAdmin = ['SQUAD_COMMANDER', 'SQUAD_COMMISSAR'].includes(session.role) && session.squadId === squadId
+
+  if (!isGlobalAdmin && !isSquadAdmin) return { error: 'Недостаточно прав' }
+
+  try {
+    await sql`UPDATE "Squad" SET description = ${description || null} WHERE id = ${squadId}`
+    revalidatePath('/dashboard')
+    revalidatePath(`/dashboard/squad/${squadId}`)
+    revalidatePath('/apply')
+    revalidatePath(`/apply/${squadId}`)
+    return { success: true }
+  } catch (e) {
+    return { error: 'Ошибка при обновлении описания' }
+  }
+}
