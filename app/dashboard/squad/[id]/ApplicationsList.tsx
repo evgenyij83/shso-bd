@@ -51,7 +51,7 @@ export default function ApplicationsList({ applications, squadId, canEdit }: { a
                   onClick={async () => {
                     setLoadingId(app.id)
                     const res = await acceptApplication(app.id, squadId)
-                    if (res?.warning) alert(res.warning)
+                    if ((res as any)?.warning) alert((res as any).warning)
                     if (res?.error) alert(res.error)
                     setLoadingId(null)
                   }}

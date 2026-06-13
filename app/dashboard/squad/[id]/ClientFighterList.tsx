@@ -38,7 +38,7 @@ export default function ClientFighterList({ fighters, squadId, canEdit, userRole
     } else { 
       setIsModalOpen(false)
       setLoading(false)
-      if (res.warning) alert(res.warning)
+      if ((res as any).warning) alert((res as any).warning)
     }
   }
 
