@@ -31,8 +31,8 @@ export default function ExportModal({ squads, isGlobal = true }: { squads: Squad
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          all: isGlobal ? exportAll : true, // If not global, backend will force session.squadId anyway
-          squadIds: Array.from(selectedSquads)
+          all: isGlobal ? exportAll : false,
+          squadIds: isGlobal ? Array.from(selectedSquads) : squads.map(s => s.id)
         })
       })
 
