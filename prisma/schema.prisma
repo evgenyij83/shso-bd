@@ -15,11 +15,13 @@ datasource db {
 }
 
 model User {
-  id         String   @id @default(cuid())
-  uniqueCode String   @unique
-  role       String   // "UNIVERSITY_ADMIN", "HQ_COMMANDER", "SQUAD_COMMANDER"
-  squadId    String?  
-  squad      Squad?   @relation(fields: [squadId], references: [id])
+  id           String   @id @default(cuid())
+  uniqueCode   String   @unique
+  role         String   // "UNIVERSITY_ADMIN", "HQ_COMMANDER", "SQUAD_COMMANDER"
+  squadId      String?  
+  squad        Squad?   @relation(fields: [squadId], references: [id])
+  sessionToken String?
+  fullName     String?
 }
 
 model Squad {
