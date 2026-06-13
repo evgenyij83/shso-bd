@@ -7,6 +7,7 @@ import ClientFighterList from './ClientFighterList'
 import ApplicationsList from './ApplicationsList'
 import EditDescriptionButton from './EditDescriptionButton'
 import EditFighterLimit from './EditFighterLimit'
+import ExportModal from '../ExportModal'
 
 export default async function SquadPage(props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
@@ -40,11 +41,12 @@ export default async function SquadPage(props: { params: Promise<{ id: string }>
 
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
         {(session.role !== 'SQUAD_COMMANDER' && session.role !== 'SQUAD_COMMISSAR') && (
           <Link href="/dashboard" style={{ color: 'var(--text-secondary)', textDecoration: 'none', display: 'flex', alignItems: 'center' }}><ArrowLeft size={24} /></Link>
         )}
         <h2>{squad.name} — Панель отряда</h2>
+        <ExportModal squads={[{ id: squad.id, name: squad.name }]} isGlobal={false} />
       </div>
 
       <EditFighterLimit 

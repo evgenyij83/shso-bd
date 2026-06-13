@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { Users } from 'lucide-react'
 import CreateSquadButton from './CreateSquadButton'
+import ExportModal from './ExportModal'
 
 export default async function DashboardPage() {
   const session = await getSession()
@@ -27,6 +28,9 @@ export default async function DashboardPage() {
       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
         <h2>Сводка по всем отрядам</h2>
         {session.role === 'UNIVERSITY_ADMIN' && <CreateSquadButton />}
+        {(session.role === 'UNIVERSITY_ADMIN' || session.role === 'DEVELOPER' || session.role === 'HQ_COMMANDER' || session.role === 'HQ_COMMISSAR') && (
+          <ExportModal squads={squads.map(s => ({ id: s.id, name: s.name }))} isGlobal={true} />
+        )}
       </div>
       
       { (session.role === 'UNIVERSITY_ADMIN' || session.role === 'DEVELOPER') && (
