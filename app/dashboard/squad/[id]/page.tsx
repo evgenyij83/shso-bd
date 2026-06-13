@@ -7,7 +7,7 @@ import ClientFighterList from './ClientFighterList'
 import ApplicationsList from './ApplicationsList'
 import EditDescriptionButton from './EditDescriptionButton'
 import EditFighterLimit from './EditFighterLimit'
-import ExportModal from '../ExportModal'
+import ExportModal from '../../ExportModal'
 
 export default async function SquadPage(props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
