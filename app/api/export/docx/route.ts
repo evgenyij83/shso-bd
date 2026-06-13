@@ -42,6 +42,7 @@ export async function POST(req: Request) {
       const tableRows = [
         new TableRow({
           children: [
+            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "№", bold: true })] })] }),
             new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "ФИО", bold: true })] })] }),
             new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Должность", bold: true })] })] }),
             new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Факультет", bold: true })] })] }),
@@ -53,10 +54,12 @@ export async function POST(req: Request) {
         })
       ]
 
+      let index = 1
       for (const f of squadFighters as any[]) {
         tableRows.push(
           new TableRow({
             children: [
+              new TableCell({ children: [new Paragraph({ text: index.toString() })] }),
               new TableCell({ children: [new Paragraph({ text: f.fullName })] }),
               new TableCell({ children: [new Paragraph({ text: f.position })] }),
               new TableCell({ children: [new Paragraph({ text: f.faculty })] }),
@@ -67,6 +70,7 @@ export async function POST(req: Request) {
             ]
           })
         )
+        index++
       }
 
       sections.push({

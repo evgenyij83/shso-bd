@@ -38,6 +38,7 @@ export async function POST(req: Request) {
     const sheet = workbook.addWorksheet('Сводка по отрядам')
 
     sheet.columns = [
+      { header: '№', key: 'index', width: 5 },
       { header: 'Отряд', key: 'squadName', width: 25 },
       { header: 'ФИО', key: 'fullName', width: 35 },
       { header: 'Должность', key: 'position', width: 15 },
@@ -53,8 +54,10 @@ export async function POST(req: Request) {
 
     for (const squad of squads as any[]) {
       const squadFighters = fighters.filter((f: any) => f.squadId === squad.id)
+      let index = 1
       for (const f of squadFighters as any[]) {
         sheet.addRow({
+          index: index,
           squadName: squad.name,
           fullName: f.fullName,
           position: f.position,
@@ -65,6 +68,7 @@ export async function POST(req: Request) {
           phone: f.phone,
           vkLink: f.vkLink || '',
         })
+        index++
       }
     }
 
