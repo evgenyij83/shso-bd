@@ -131,3 +131,20 @@ export async function updateSquadDescription(formData: FormData) {
     return { error: 'Ошибка при обновлении описания' }
   }
 }
+
+export async function setFighterLimit(formData: FormData) {
+  const session = await getSession()
+  if (!session || (session.role !== 'DEVELOPER' && session.role !== 'UNIVERSITY_ADMIN')) return { error: 'Недостаточно прав' }
+
+  const squadId = formData.get('squadId') as string
+  const limitStr = formData.get('fighterLimit') as string
+  const limit = limitStr && limitStr.trim() !== '' ? parseInt(limitStr, 10) : null
+
+  try {
+    await sql`UPDATE "Squad" SET "fighterLimit" = ${limit} WHERE id = ${squadId}`
+    revalidatePath(`/dashboard/squad/${squadId}`)
+    return { success: true }
+  } catch (e) {
+    return { error: 'Ошибка при установке лимита бойцов' }
+  }
+}

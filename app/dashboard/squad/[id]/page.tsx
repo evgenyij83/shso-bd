@@ -6,6 +6,7 @@ import { ArrowLeft } from 'lucide-react'
 import ClientFighterList from './ClientFighterList'
 import ApplicationsList from './ApplicationsList'
 import EditDescriptionButton from './EditDescriptionButton'
+import EditFighterLimit from './EditFighterLimit'
 
 export default async function SquadPage(props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
@@ -45,6 +46,12 @@ export default async function SquadPage(props: { params: Promise<{ id: string }>
         )}
         <h2>{squad.name} — Панель отряда</h2>
       </div>
+
+      <EditFighterLimit 
+        squadId={squad.id} 
+        currentLimit={squad.fighterLimit} 
+        canSetLimit={session.role === 'UNIVERSITY_ADMIN' || session.role === 'DEVELOPER'} 
+      />
 
       {canEdit && <EditDescriptionButton squadId={squad.id} initialDescription={squad.description} />}
       

@@ -29,7 +29,7 @@ export default async function DashboardPage() {
         {session.role === 'UNIVERSITY_ADMIN' && <CreateSquadButton />}
       </div>
       
-      {session.role === 'UNIVERSITY_ADMIN' && (
+      { (session.role === 'UNIVERSITY_ADMIN' || session.role === 'DEVELOPER') && (
         <div className="glass-panel" style={{ marginTop: '2rem', padding: '1.5rem', background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.3)', display: 'flex', alignItems: 'center', gap: '1rem' }}>
           <div style={{ background: 'rgba(59, 130, 246, 0.2)', padding: '12px', borderRadius: '12px' }}>
             <Users size={24} color="#60a5fa" />

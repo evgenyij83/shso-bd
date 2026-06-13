@@ -32,6 +32,17 @@ export async function addFighter(formData: FormData) {
     }
   }
 
+  const squadResult = await sql`SELECT "fighterLimit" FROM "Squad" WHERE id = ${squadId}`
+  const fighterLimit = squadResult[0]?.fighterLimit
+
+  if (fighterLimit !== null && position !== 'Кандидат') {
+    const activeFightersCountResult = await sql`SELECT COUNT(*) as count FROM "Fighter" WHERE "squadId" = ${squadId} AND position != 'Кандидат'`
+    const activeFightersCount = parseInt(activeFightersCountResult[0].count, 10)
+    if (activeFightersCount >= fighterLimit) {
+      return { error: `Лимит бойцов (${fighterLimit}) исчерпан. Вы можете добавить человека только в статусе "Кандидат".` }
+    }
+  }
+
   await sql`
     INSERT INTO "Fighter" (id, "squadId", "fullName", position, faculty, "studyGroup", course, "educationForm", phone, "vkLink") 
     VALUES (gen_random_uuid(), ${squadId}, ${fullName}, ${position}, ${faculty}, ${studyGroup}, ${course}, ${educationForm}, ${phone}, ${vkLink})

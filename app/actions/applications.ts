@@ -13,15 +13,28 @@ export async function acceptApplication(applicationId: string, squadId: string) 
   }
 
   try {
-    // Получаем заявку
+    // Получаем заявку и отряд
     const appResult = await sql`SELECT * FROM "Application" WHERE id = ${applicationId}`
     const app = appResult[0] as any
     if (!app) return { error: 'Заявка не найдена' }
 
+    const squadResult = await sql`SELECT "fighterLimit" FROM "Squad" WHERE id = ${squadId}`
+    const fighterLimit = squadResult[0]?.fighterLimit
+
+    let positionToAssign = 'Боец'
+
+    if (fighterLimit !== null) {
+      const activeFightersCountResult = await sql`SELECT COUNT(*) as count FROM "Fighter" WHERE "squadId" = ${squadId} AND position != 'Кандидат'`
+      const activeFightersCount = parseInt(activeFightersCountResult[0].count, 10)
+      if (activeFightersCount >= fighterLimit) {
+        positionToAssign = 'Кандидат'
+      }
+    }
+
     // Переносим в бойцы
     await sql`
       INSERT INTO "Fighter" (id, "squadId", "fullName", position, faculty, "studyGroup", course, "educationForm", phone, "vkLink") 
-      VALUES (gen_random_uuid(), ${app.squadId}, ${app.fullName}, 'Боец', ${app.faculty}, ${app.studyGroup}, ${app.course}, ${app.educationForm}, ${app.phone}, ${app.vkLink})
+      VALUES (gen_random_uuid(), ${app.squadId}, ${app.fullName}, ${positionToAssign}, ${app.faculty}, ${app.studyGroup}, ${app.course}, ${app.educationForm}, ${app.phone}, ${app.vkLink})
     `
 
     // Удаляем заявку

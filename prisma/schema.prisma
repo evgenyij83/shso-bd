@@ -28,6 +28,7 @@ model Squad {
   id           String        @id @default(cuid())
   name         String        @unique
   description  String?
+  fighterLimit Int?
   users        User[]
   fighters     Fighter[]
   applications Application[]
