@@ -16,18 +16,31 @@ export async function sendVkMessage(vkLink: string | null | undefined, message: 
       }
     }
 
+    if (!user_id) {
+      const resolveParams = new URLSearchParams({
+        v: '5.131',
+        access_token: token,
+        screen_name: domain
+      });
+      const resolveRes = await fetch('https://api.vk.com/method/utils.resolveScreenName', { method: 'POST', body: resolveParams });
+      const resolveData = await resolveRes.json();
+      if (resolveData?.response?.type === 'user') {
+        user_id = resolveData.response.object_id;
+      }
+    }
+
+    if (!user_id) {
+      console.error('Could not resolve VK user ID from domain:', domain);
+      return;
+    }
+
     const params = new URLSearchParams({
       v: '5.131',
       random_id: Math.floor(Math.random() * 2147483647).toString(),
       message: message,
       access_token: token,
+      user_id: user_id.toString()
     });
-
-    if (user_id) {
-      params.append('user_id', user_id.toString());
-    } else {
-      params.append('domain', domain);
-    }
 
     const response = await fetch('https://api.vk.com/method/messages.send', {
       method: 'POST',
