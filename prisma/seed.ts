@@ -20,7 +20,7 @@ async function main() {
   // Руководство университета
   await prisma.user.create({
     data: {
-      uniqueCode: 'UNIV-ADMIN-123',
+      uniqueCode: 'DEV-ROOT',
       role: 'UNIVERSITY_ADMIN',
     },
   })
