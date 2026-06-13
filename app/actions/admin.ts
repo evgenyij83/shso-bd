@@ -9,10 +9,11 @@ export async function addSquad(formData: FormData) {
   if (!session || (session.role !== 'DEVELOPER' && session.role !== 'UNIVERSITY_ADMIN')) return { error: 'Недостаточно прав' }
 
   const name = formData.get('name') as string
+  const description = formData.get('description') as string | null
   if (!name) return { error: 'Укажите название отряда' }
 
   try {
-    await sql`INSERT INTO "Squad" (id, name) VALUES (gen_random_uuid(), ${name})`
+    await sql`INSERT INTO "Squad" (id, name, description) VALUES (gen_random_uuid(), ${name}, ${description || null})`
     revalidatePath('/dashboard/admin')
     revalidatePath('/dashboard')
     return { success: true }

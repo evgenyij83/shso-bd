@@ -55,6 +55,11 @@ export default async function DashboardPage() {
                 <div style={{ background: 'rgba(255,255,255,0.1)', padding: '10px', borderRadius: '10px' }}><Users color="var(--accent-color)" /></div>
                 <h3 style={{ fontSize: '1.25rem', color: 'var(--text-primary)' }}>{squad.name}</h3>
               </div>
+              {squad.description && (
+                <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '1rem', lineHeight: 1.4 }}>
+                  {squad.description}
+                </p>
+              )}
               <div style={{ background: 'rgba(0,0,0,0.2)', padding: '0.75rem', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
                 <span>Количество бойцов:</span>
                 <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{squad.fightersCount}</span>

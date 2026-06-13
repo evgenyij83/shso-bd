@@ -11,9 +11,12 @@ export default function CreateSquadButton() {
     const name = window.prompt('Введите название нового отряда:')
     if (!name || name.trim() === '') return
 
+    const description = window.prompt('Введите описание отряда (или оставьте пустым):') || ''
+
     setLoading(true)
     const formData = new FormData()
     formData.append('name', name.trim())
+    formData.append('description', description.trim())
     
     const res = await addSquad(formData)
     if (res.error) {

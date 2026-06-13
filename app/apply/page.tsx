@@ -18,9 +18,12 @@ export default async function ApplyPage() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
         {squads.map(squad => (
           <Link href={`/apply/${squad.id}`} key={squad.id} style={{ textDecoration: 'none' }}>
-            <div className="glass-panel hover-effect" style={{ padding: '2rem', textAlign: 'center', cursor: 'pointer', transition: 'all 0.2s', border: '1px solid rgba(255,255,255,0.05)' }}>
-              <h3 style={{ fontSize: '1.5rem', color: 'var(--text-primary)', marginBottom: '0.5rem' }}>{squad.name}</h3>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Подать заявку &rarr;</p>
+            <div className="glass-panel hover-effect" style={{ padding: '2rem', textAlign: 'center', cursor: 'pointer', transition: 'all 0.2s', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', height: '100%' }}>
+              <h3 style={{ fontSize: '1.5rem', color: 'var(--text-primary)', marginBottom: squad.description ? '0.5rem' : '1.5rem' }}>{squad.name}</h3>
+              {squad.description && (
+                <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '1.5rem', lineHeight: 1.4, flexGrow: 1 }}>{squad.description}</p>
+              )}
+              <p style={{ color: 'var(--accent-color)', fontSize: '0.9rem', fontWeight: 600, marginTop: 'auto' }}>Подать заявку &rarr;</p>
             </div>
           </Link>
         ))}
