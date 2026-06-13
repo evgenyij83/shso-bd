@@ -3,6 +3,7 @@
 import sql from '@/lib/db'
 import { getSession } from './auth'
 import { revalidatePath } from 'next/cache'
+import { sendVkMessage } from '@/lib/vkBot'
 
 export async function acceptApplication(applicationId: string, squadId: string) {
   const session = await getSession()
@@ -40,6 +41,10 @@ export async function acceptApplication(applicationId: string, squadId: string) 
     // Удаляем заявку
     await sql`DELETE FROM "Application" WHERE id = ${applicationId}`
 
+    const squadInfo = await sql`SELECT name FROM "Squad" WHERE id = ${squadId}`
+    const squadName = squadInfo[0]?.name || 'отряд'
+    await sendVkMessage(app.vkLink, `Ваша заявка на вступление в ${squadName} одобрена.`)
+
     revalidatePath(`/dashboard/squad/${squadId}`)
     return { success: true }
   } catch (e) {
@@ -48,7 +53,7 @@ export async function acceptApplication(applicationId: string, squadId: string) 
   }
 }
 
-export async function rejectApplication(applicationId: string, squadId: string) {
+export async function rejectApplication(applicationId: string, squadId: string, reason: string) {
   const session = await getSession()
   if (!session) return { error: 'Не авторизован' }
   
@@ -57,7 +62,17 @@ export async function rejectApplication(applicationId: string, squadId: string) 
   }
 
   try {
+    const appResult = await sql`SELECT * FROM "Application" WHERE id = ${applicationId}`
+    const app = appResult[0] as any
+    if (!app) return { error: 'Заявка не найдена' }
+
+    const squadInfo = await sql`SELECT name FROM "Squad" WHERE id = ${squadId}`
+    const squadName = squadInfo[0]?.name || 'отряд'
+
     await sql`DELETE FROM "Application" WHERE id = ${applicationId}`
+
+    await sendVkMessage(app.vkLink, `Ваша заявка на вступление в ${squadName} отклонена.\nПричина: ${reason}`)
+
     revalidatePath(`/dashboard/squad/${squadId}`)
     return { success: true }
   } catch (e) {

@@ -58,7 +58,7 @@ export default function ApplicationForm({ squadId, squadName }: { squadId: strin
         </select>
 
         <input name="phone" placeholder="Номер телефона" className="input-field" required />
-        <input name="vkLink" placeholder="Ссылка на ВКонтакте (необязательно)" className="input-field" />
+        <input name="vkLink" placeholder="Ссылка на ВКонтакте (обязательно)" className="input-field" required />
 
         {error && <div style={{ color: 'var(--danger-color)', fontSize: '0.9rem' }}>{error}</div>}
         

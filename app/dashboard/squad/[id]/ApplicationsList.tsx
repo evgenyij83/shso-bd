@@ -61,9 +61,10 @@ export default function ApplicationsList({ applications, squadId, canEdit }: { a
                   style={{ padding: '8px 16px', display: 'flex', alignItems: 'center', gap: '5px' }}
                   disabled={loadingId === app.id}
                   onClick={async () => {
-                    if (confirm('Вы уверены, что хотите отклонить эту заявку?')) {
+                    const reason = prompt('Укажите причину отклонения заявки. Она будет отправлена кандидату в ВК:');
+                    if (reason !== null) {
                       setLoadingId(app.id)
-                      await rejectApplication(app.id, squadId)
+                      await rejectApplication(app.id, squadId, reason || 'Без указания причины')
                       setLoadingId(null)
                     }
                   }}

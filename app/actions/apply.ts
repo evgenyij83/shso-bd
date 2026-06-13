@@ -1,6 +1,8 @@
 'use server'
 
+import { revalidatePath } from 'next/cache'
 import sql from '@/lib/db'
+import { sendVkMessage } from '@/lib/vkBot'
 
 export async function submitApplication(formData: FormData) {
   const squadId = formData.get('squadId') as string
@@ -10,10 +12,10 @@ export async function submitApplication(formData: FormData) {
   const course = parseInt(formData.get('course') as string, 10)
   const educationForm = formData.get('educationForm') as string
   const phone = formData.get('phone') as string
-  const vkLink = formData.get('vkLink') as string || null
+  const vkLink = formData.get('vkLink') as string
 
-  if (!squadId || !fullName || !faculty || !studyGroup || !course || !educationForm || !phone) {
-    return { error: 'Пожалуйста, заполните все обязательные поля' }
+  if (!squadId || !fullName || !faculty || !studyGroup || !course || !educationForm || !phone || !vkLink) {
+    return { error: 'Пожалуйста, заполните все поля, включая ссылку на ВКонтакте' }
   }
 
   try {
@@ -21,6 +23,13 @@ export async function submitApplication(formData: FormData) {
       INSERT INTO "Application" (id, "squadId", "fullName", "faculty", "studyGroup", "course", "educationForm", "phone", "vkLink") 
       VALUES (gen_random_uuid(), ${squadId}, ${fullName}, ${faculty}, ${studyGroup}, ${course}, ${educationForm}, ${phone}, ${vkLink})
     `
+
+    // Получаем название отряда для красивого сообщения
+    const squadInfo = await sql`SELECT name FROM "Squad" WHERE id = ${squadId}`
+    const squadName = squadInfo[0]?.name || 'выбранный отряд'
+
+    await sendVkMessage(vkLink, `Ваша заявка на вступление в ${squadName} принята в обработку.`)
+
     return { success: true }
   } catch (e) {
     console.error(e)
