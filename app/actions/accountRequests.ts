@@ -39,6 +39,10 @@ export async function submitAccountRequest(formData: FormData) {
 
   if (!requestedRole || !fullName) return { error: 'Заполните обязательные поля' }
 
+  if (isHQRole && !['SQUAD_COMMANDER', 'SQUAD_COMMISSAR'].includes(requestedRole)) {
+    return { error: 'Вы можете отправлять заявки только на командира или комиссара отряда' }
+  }
+
   const isSquadRole = ['SQUAD_COMMANDER', 'SQUAD_COMMISSAR'].includes(requestedRole)
   if (isSquadRole && !squadId) return { error: 'Для этой роли необходимо выбрать отряд' }
 

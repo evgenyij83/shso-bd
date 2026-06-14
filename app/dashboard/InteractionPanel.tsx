@@ -169,9 +169,13 @@ export default function InteractionPanel({ squads, hasVkLink, userRole }: { squa
                     >
                       <option value="SQUAD_COMMANDER">Командир отряда</option>
                       <option value="SQUAD_COMMISSAR">Комиссар отряда</option>
-                      <option value="HQ_COMMANDER">Командир штаба</option>
-                      <option value="HQ_COMMISSAR">Комиссар штаба</option>
-                      <option value="UNIVERSITY_ADMIN">Руководство университета</option>
+                      {!isHQRole && (
+                        <>
+                          <option value="HQ_COMMANDER">Командир штаба</option>
+                          <option value="HQ_COMMISSAR">Комиссар штаба</option>
+                          <option value="UNIVERSITY_ADMIN">Руководство университета</option>
+                        </>
+                      )}
                     </select>
 
                     {isFormRole && (
