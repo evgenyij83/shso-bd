@@ -16,7 +16,9 @@ const roleLabels: Record<string, string> = {
 
 export async function submitAccountRequest(formData: FormData) {
   const session = await getSession()
-  if (!session || session.role !== 'UNIVERSITY_ADMIN') return { error: 'Недостаточно прав' }
+  if (!session) return { error: 'Недостаточно прав' }
+  const isHQRole = session.role === 'HQ_COMMANDER' || session.role === 'HQ_COMMISSAR'
+  if (session.role !== 'UNIVERSITY_ADMIN' && !isHQRole) return { error: 'Недостаточно прав' }
 
   // Проверяем что у руководителя указана ВК-ссылка
   const currentUser = await sql`SELECT "vkLink" FROM "User" WHERE id = ${session.userId}`

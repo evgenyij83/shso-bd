@@ -14,7 +14,7 @@ export default function InteractionPanel({ squads, hasVkLink, userRole }: { squa
   
   const [isOpen, setIsOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
-  const [activeTab, setActiveTab] = useState<'request' | 'message'>(isHQRole ? 'message' : 'request')
+  const [activeTab, setActiveTab] = useState<'request' | 'message'>('request')
 
   // Request form state
   const [reqLoading, setReqLoading] = useState(false)
@@ -32,6 +32,12 @@ export default function InteractionPanel({ squads, hasVkLink, userRole }: { squa
   const [recipientsLoaded, setRecipientsLoaded] = useState(false)
 
   useEffect(() => { setMounted(true) }, [])
+
+  useEffect(() => {
+    if (isOpen && activeTab === 'message') {
+      loadRecipients()
+    }
+  }, [isOpen, activeTab])
 
   async function loadRecipients() {
     if (recipientsLoaded) return
@@ -125,29 +131,27 @@ export default function InteractionPanel({ squads, hasVkLink, userRole }: { squa
               <button onClick={() => setIsOpen(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '2rem', lineHeight: 1 }}>&times;</button>
             </div>
 
-            {/* Tabs (Hidden for HQ roles as they only have messaging) */}
-            {!isHQRole && (
-              <div style={{ display: 'flex', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-                <button 
-                  onClick={() => handleTabChange('request')}
-                  style={{ flex: 1, padding: '1rem', background: activeTab === 'request' ? 'rgba(59, 130, 246, 0.15)' : 'transparent', border: 'none', borderBottom: activeTab === 'request' ? '2px solid #3b82f6' : '2px solid transparent', color: activeTab === 'request' ? '#3b82f6' : 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '0.95rem', transition: 'all 0.2s' }}
-                >
-                  <UserPlus size={16} /> Заявка на аккаунт
-                </button>
-                <button 
-                  onClick={() => handleTabChange('message')}
-                  style={{ flex: 1, padding: '1rem', background: activeTab === 'message' ? 'rgba(59, 130, 246, 0.15)' : 'transparent', border: 'none', borderBottom: activeTab === 'message' ? '2px solid #3b82f6' : '2px solid transparent', color: activeTab === 'message' ? '#3b82f6' : 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '0.95rem', transition: 'all 0.2s' }}
-                >
-                  <Send size={16} /> Оставить сообщение
-                </button>
-              </div>
-            )}
+            {/* Tabs */}
+            <div style={{ display: 'flex', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+              <button 
+                onClick={() => handleTabChange('request')}
+                style={{ flex: 1, padding: '1rem', background: activeTab === 'request' ? 'rgba(59, 130, 246, 0.15)' : 'transparent', border: 'none', borderBottom: activeTab === 'request' ? '2px solid #3b82f6' : '2px solid transparent', color: activeTab === 'request' ? '#3b82f6' : 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '0.95rem', transition: 'all 0.2s' }}
+              >
+                <UserPlus size={16} /> Заявка на аккаунт
+              </button>
+              <button 
+                onClick={() => handleTabChange('message')}
+                style={{ flex: 1, padding: '1rem', background: activeTab === 'message' ? 'rgba(59, 130, 246, 0.15)' : 'transparent', border: 'none', borderBottom: activeTab === 'message' ? '2px solid #3b82f6' : '2px solid transparent', color: activeTab === 'message' ? '#3b82f6' : 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '0.95rem', transition: 'all 0.2s' }}
+              >
+                <Send size={16} /> Оставить сообщение
+              </button>
+            </div>
 
             {/* Content */}
             <div style={{ padding: '1.5rem' }}>
 
               {/* === Tab: Request === */}
-              {activeTab === 'request' && !isHQRole && (
+              {activeTab === 'request' && (
                 <div>
                   {!hasVkLink && (
                     <div style={{ background: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.3)', padding: '1rem', borderRadius: '8px', marginBottom: '1.5rem', color: '#fca5a5', fontSize: '0.9rem' }}>

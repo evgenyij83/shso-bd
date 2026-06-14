@@ -88,8 +88,6 @@ export default function ClientFighterList({ fighters, squadId, canEdit, userRole
                   <select name="position" defaultValue={editingFighter?.position || 'Боец'} className="input-field" required>
                     <option value="Боец">Боец</option>
                     <option value="Кандидат">Кандидат</option>
-                    {canAddCommander && <option value="Командир">Командир</option>}
-                    <option value="Комиссар">Комиссар</option>
                   </select>
                   <input name="course" type="number" min="1" max="6" placeholder="Курс" defaultValue={editingFighter?.course || ''} className="input-field" required />
                   <input name="faculty" placeholder="Факультет" defaultValue={editingFighter?.faculty || ''} className="input-field" required />
