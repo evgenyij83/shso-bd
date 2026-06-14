@@ -30,7 +30,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const statuteResult = await sql`SELECT value FROM "SystemSettings" WHERE key = 'STATUTE'`
   const statute = statuteResult.length > 0 ? statuteResult[0].value : ''
 
-  const showVkEditor = session.role === 'DEVELOPER' || session.role === 'UNIVERSITY_ADMIN'
+  const showVkEditor = true
   const isHQ = session.role === 'HQ_COMMANDER' || session.role === 'HQ_COMMISSAR'
   const showInteractionPanel = session.role === 'UNIVERSITY_ADMIN' || isHQ
 
