@@ -31,7 +31,14 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const statute = statuteResult.length > 0 ? statuteResult[0].value : ''
 
   const showVkEditor = session.role === 'DEVELOPER' || session.role === 'UNIVERSITY_ADMIN'
-  const showInteractionPanel = session.role === 'UNIVERSITY_ADMIN'
+  const isHQ = session.role === 'HQ_COMMANDER' || session.role === 'HQ_COMMISSAR'
+  const showInteractionPanel = session.role === 'UNIVERSITY_ADMIN' || isHQ
+
+  let pendingRequestsCount = 0
+  if (session.role === 'DEVELOPER') {
+    const reqResult = await sql`SELECT COUNT(*) as count FROM "AccountRequest"`
+    pendingRequestsCount = parseInt(reqResult[0].count, 10)
+  }
 
   let squads: any[] = []
   if (showInteractionPanel) {
@@ -54,11 +61,16 @@ export default async function DashboardLayout({ children }: { children: React.Re
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
           <ReadStatuteButton statute={statute} />
           {showInteractionPanel && (
-            <InteractionPanel squads={squads} hasVkLink={!!session.vkLink} />
+            <InteractionPanel squads={squads} hasVkLink={!!session.vkLink} userRole={session.role} />
           )}
           {session.role === 'DEVELOPER' && (
-            <Link href="/dashboard/admin" style={{ color: 'var(--text-primary)', textDecoration: 'none', background: 'rgba(59, 130, 246, 0.2)', padding: '8px 16px', borderRadius: '8px', fontSize: '0.9rem' }}>
+            <Link href="/dashboard/admin" style={{ position: 'relative', color: 'var(--text-primary)', textDecoration: 'none', background: 'rgba(59, 130, 246, 0.2)', padding: '8px 16px', borderRadius: '8px', fontSize: '0.9rem' }}>
               Панель управления
+              {pendingRequestsCount > 0 && (
+                <span style={{ position: 'absolute', top: '-8px', right: '-8px', background: 'var(--danger-color)', color: 'white', fontSize: '0.75rem', fontWeight: 'bold', padding: '2px 6px', borderRadius: '10px' }}>
+                  {pendingRequestsCount}
+                </span>
+              )}
             </Link>
           )}
           <form action={logout}>

@@ -54,8 +54,12 @@ export async function acceptApplication(applicationId: string, squadId: string) 
     const squadName = squadInfo[0]?.name || 'отряд'
     const chatLink = squadInfo[0]?.chatLink
 
-    const roleName = roleLabels[session.role] || 'администратор'
-    const actorName = session.fullName || 'Имя не указано'
+    let roleName = roleLabels[session.role] || 'администратор'
+    let actorName = session.fullName || 'Имя не указано'
+    if (session.role === 'DEVELOPER') {
+      roleName = 'Разработчик'
+      actorName = 'KiritoNagibator'
+    }
     const actorString = `\n\nДействие совершил(а): ${roleName} "${actorName}"`
     
     let chatMessage = ''
@@ -91,8 +95,12 @@ export async function rejectApplication(applicationId: string, squadId: string, 
     const squadInfo = await sql`SELECT name FROM "Squad" WHERE id = ${squadId}`
     const squadName = squadInfo[0]?.name || 'отряд'
 
-    const roleName = roleLabels[session.role] || 'администратор'
-    const actorName = session.fullName || 'Имя не указано'
+    let roleName = roleLabels[session.role] || 'администратор'
+    let actorName = session.fullName || 'Имя не указано'
+    if (session.role === 'DEVELOPER') {
+      roleName = 'Разработчик'
+      actorName = 'KiritoNagibator'
+    }
     const actorString = `\n\nДействие совершил(а): ${roleName} "${actorName}"`
 
     await sql`DELETE FROM "Application" WHERE id = ${applicationId}`

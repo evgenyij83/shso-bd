@@ -15,16 +15,29 @@ const roleLabels: Record<string, string> = {
 
 export async function getAvailableRecipients() {
   const session = await getSession()
-  if (!session || session.role !== 'UNIVERSITY_ADMIN') return []
+  if (!session) return []
+  const isHQ = session.role === 'HQ_COMMANDER' || session.role === 'HQ_COMMISSAR'
+  if (session.role !== 'UNIVERSITY_ADMIN' && !isHQ) return []
 
   try {
-    const users = await sql`
-      SELECT u.id, u."fullName", u.role, u."vkLink", s.name as "squadName"
-      FROM "User" u
-      LEFT JOIN "Squad" s ON u."squadId" = s.id
-      WHERE u.id != ${session.userId}
-      ORDER BY u.role, u."fullName"
-    `
+    let users
+    if (isHQ) {
+      users = await sql`
+        SELECT u.id, u."fullName", u.role, u."vkLink", s.name as "squadName"
+        FROM "User" u
+        LEFT JOIN "Squad" s ON u."squadId" = s.id
+        WHERE u.id != ${session.userId} AND u.role IN ('SQUAD_COMMANDER', 'SQUAD_COMMISSAR')
+        ORDER BY u.role, u."fullName"
+      `
+    } else {
+      users = await sql`
+        SELECT u.id, u."fullName", u.role, u."vkLink", s.name as "squadName"
+        FROM "User" u
+        LEFT JOIN "Squad" s ON u."squadId" = s.id
+        WHERE u.id != ${session.userId}
+        ORDER BY u.role, u."fullName"
+      `
+    }
     return users.map((u: any) => ({
       id: u.id,
       fullName: u.fullName || 'Имя не указано',
@@ -40,13 +53,20 @@ export async function getAvailableRecipients() {
 
 export async function sendBulkMessage(recipientIds: string[], message: string) {
   const session = await getSession()
-  if (!session || session.role !== 'UNIVERSITY_ADMIN') return { error: 'Недостаточно прав' }
+  if (!session) return { error: 'Недостаточно прав' }
+  const isHQ = session.role === 'HQ_COMMANDER' || session.role === 'HQ_COMMISSAR'
+  if (session.role !== 'UNIVERSITY_ADMIN' && !isHQ && session.role !== 'DEVELOPER') return { error: 'Недостаточно прав' }
 
   if (!recipientIds || recipientIds.length === 0) return { error: 'Выберите хотя бы одного получателя' }
   if (!message || !message.trim()) return { error: 'Введите текст сообщения' }
 
   try {
-    const senderName = session.fullName || 'Руководитель'
+    let senderName = session.fullName || 'Руководитель'
+    if (session.role === 'DEVELOPER') {
+      senderName = 'Разработчик KiritoNagibator'
+    } else if (isHQ) {
+      senderName = `${roleLabels[session.role]} ${session.fullName || ''}`.trim()
+    }
     const messageText = `У вас новое сообщение от ${senderName}:\n${message.trim()}`
 
     const recipients = await sql`SELECT id, "vkLink" FROM "User" WHERE id = ANY(${recipientIds})`

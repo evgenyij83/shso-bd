@@ -119,6 +119,27 @@ export async function acceptAccountRequest(requestId: string, uniqueCode: string
 
     const role = req.requestedRole
     const squadId = req.squadId || null
+    
+    // Проверки на уникальность ролей при создании аккаунта
+    const isSquadRole = ['SQUAD_COMMANDER', 'SQUAD_COMMISSAR'].includes(role)
+    const isHQ = ['HQ_COMMANDER', 'HQ_COMMISSAR'].includes(role)
+
+    if (isSquadRole && squadId) {
+      const position = role === 'SQUAD_COMMANDER' ? 'Командир' : 'Комиссар'
+      const existingUser = await sql`SELECT id FROM "User" WHERE role = ${role} AND "squadId" = ${squadId}`
+      if (existingUser.length > 0) return { error: `В этом отряде уже есть аккаунт ${position.toLowerCase()}а` }
+      
+      const existingFighter = await sql`SELECT id FROM "Fighter" WHERE position = ${position} AND "squadId" = ${squadId}`
+      if (existingFighter.length > 0) return { error: `В этом отряде уже есть ${position.toLowerCase()} в списке бойцов` }
+    }
+
+    if (isHQ) {
+      const existingHQ = await sql`SELECT id FROM "User" WHERE role = ${role}`
+      if (existingHQ.length > 0) {
+        const position = role === 'HQ_COMMANDER' ? 'командира' : 'комиссара'
+        return { error: `Аккаунт ${position} штаба уже существует. Удалите старый аккаунт перед принятием заявки.` }
+      }
+    }
 
     // Создаём пользователя
     await sql`
@@ -127,8 +148,6 @@ export async function acceptAccountRequest(requestId: string, uniqueCode: string
     `
 
     // Авто-создание Fighter для командиров/комиссаров
-    const isSquadRole = ['SQUAD_COMMANDER', 'SQUAD_COMMISSAR'].includes(role)
-    const isHQ = ['HQ_COMMANDER', 'HQ_COMMISSAR'].includes(role)
 
     if ((isSquadRole || isHQ) && squadId && req.fullName) {
       let position = 'Боец'
@@ -168,7 +187,8 @@ export async function rejectAccountRequest(requestId: string, reason: string) {
 
     // Отправляем ВК-сообщение руководителю
     if (req.requesterVkLink) {
-      await sendVkMessage(req.requesterVkLink, `Заявка на создание аккаунта отклонена.\nПричина: ${reason.trim()}`)
+      const actorString = `\n\nДействие совершил(а): Разработчик "KiritoNagibator"`
+      await sendVkMessage(req.requesterVkLink, `Заявка на создание аккаунта отклонена.\nПричина: ${reason.trim()}${actorString}`)
     }
 
     await sql`DELETE FROM "AccountRequest" WHERE id = ${requestId}`
