@@ -10,7 +10,7 @@ import { getPendingAwardNominations, approveByHQ, approveByUniversity, getUniver
 type Squad = { id: string, name: string }
 type Recipient = { id: string, fullName: string, role: string, squadName: string | null, hasVk: boolean }
 
-export default function InteractionPanel({ squads, hasVkLink, userRole }: { squads: Squad[], hasVkLink: boolean, userRole: string }) {
+export default function InteractionPanel({ squads, hasVkLink, userRole, pendingCount = 0 }: { squads: Squad[], hasVkLink: boolean, userRole: string, pendingCount?: number }) {
   const isHQRole = userRole === 'HQ_COMMANDER' || userRole === 'HQ_COMMISSAR'
   
   const [isOpen, setIsOpen] = useState(false)
@@ -132,8 +132,13 @@ export default function InteractionPanel({ squads, hasVkLink, userRole }: { squa
   const isFormRole = isSquadRole || isHQ
 
   if (!mounted) return (
-    <button style={{ color: 'var(--text-primary)', background: 'rgba(59, 130, 246, 0.2)', border: '1px solid rgba(59, 130, 246, 0.3)', padding: '8px 16px', borderRadius: '8px', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+    <button style={{ position: 'relative', color: 'var(--text-primary)', background: 'rgba(59, 130, 246, 0.2)', border: '1px solid rgba(59, 130, 246, 0.3)', padding: '8px 16px', borderRadius: '8px', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
       <MessageSquare size={16} /> Панель взаимодействия
+      {pendingCount > 0 && (
+        <span style={{ position: 'absolute', top: '-8px', right: '-8px', background: 'var(--danger-color)', color: 'white', fontSize: '0.75rem', fontWeight: 'bold', padding: '2px 6px', borderRadius: '10px' }}>
+          {pendingCount}
+        </span>
+      )}
     </button>
   )
 
@@ -141,9 +146,14 @@ export default function InteractionPanel({ squads, hasVkLink, userRole }: { squa
     <>
       <button 
         onClick={() => setIsOpen(true)}
-        style={{ color: 'var(--text-primary)', background: 'rgba(59, 130, 246, 0.2)', border: '1px solid rgba(59, 130, 246, 0.3)', padding: '8px 16px', borderRadius: '8px', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', transition: 'all 0.2s' }}
+        style={{ position: 'relative', color: 'var(--text-primary)', background: 'rgba(59, 130, 246, 0.2)', border: '1px solid rgba(59, 130, 246, 0.3)', padding: '8px 16px', borderRadius: '8px', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', transition: 'all 0.2s' }}
       >
         <MessageSquare size={16} /> Панель взаимодействия
+        {pendingCount > 0 && (
+          <span style={{ position: 'absolute', top: '-8px', right: '-8px', background: 'var(--danger-color)', color: 'white', fontSize: '0.75rem', fontWeight: 'bold', padding: '2px 6px', borderRadius: '10px' }}>
+            {pendingCount}
+          </span>
+        )}
       </button>
 
       {isOpen && createPortal(
@@ -173,9 +183,14 @@ export default function InteractionPanel({ squads, hasVkLink, userRole }: { squa
               {showAwardsTab && (
                 <button 
                   onClick={() => handleTabChange('awards')}
-                  style={{ flex: 1, padding: '0.75rem', background: activeTab === 'awards' ? 'rgba(251, 191, 36, 0.15)' : 'transparent', border: 'none', borderBottom: activeTab === 'awards' ? '2px solid #fbbf24' : '2px solid transparent', color: activeTab === 'awards' ? '#fbbf24' : 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '0.85rem', transition: 'all 0.2s' }}
+                  style={{ position: 'relative', flex: 1, padding: '0.75rem', background: activeTab === 'awards' ? 'rgba(251, 191, 36, 0.15)' : 'transparent', border: 'none', borderBottom: activeTab === 'awards' ? '2px solid #fbbf24' : '2px solid transparent', color: activeTab === 'awards' ? '#fbbf24' : 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '0.85rem', transition: 'all 0.2s' }}
                 >
                   <Award size={14} /> Награждения
+                  {pendingCount > 0 && (
+                    <span style={{ position: 'absolute', top: '8px', right: '8px', background: 'var(--danger-color)', color: 'white', fontSize: '0.7rem', fontWeight: 'bold', padding: '1px 5px', borderRadius: '10px' }}>
+                      {pendingCount}
+                    </span>
+                  )}
                 </button>
               )}
             </div>
