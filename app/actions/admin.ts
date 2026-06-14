@@ -37,6 +37,12 @@ export async function addUser(formData: FormData) {
 
   if (isSquadCommander && !squadId) return { error: 'Для этой роли необходимо выбрать отряд' }
 
+  // ВК-ссылка обязательна для командиров/комиссаров
+  if (isFormRole) {
+    const vkLinkCheck = formData.get('vkLink') as string
+    if (!vkLinkCheck || !vkLinkCheck.trim()) return { error: 'Для этой роли обязательно указать ссылку на ВК' }
+  }
+
   try {
     if (isSquadCommander && squadId) {
       const position = role === 'SQUAD_COMMANDER' ? 'Командир' : 'Комиссар'
@@ -56,8 +62,9 @@ export async function addUser(formData: FormData) {
     }
 
     const fullName = formData.get('fullName') as string | null
+    const userVkLink = formData.get('vkLink') as string | null
 
-    await sql`INSERT INTO "User" (id, "uniqueCode", role, "squadId", "fullName") VALUES (gen_random_uuid(), ${uniqueCode}, ${role}, ${squadId || null}, ${fullName})`
+    await sql`INSERT INTO "User" (id, "uniqueCode", role, "squadId", "fullName", "vkLink") VALUES (gen_random_uuid(), ${uniqueCode}, ${role}, ${squadId || null}, ${fullName}, ${userVkLink || null})`
     
     // Автоматическое создание анкеты в списке бойцов
     if (isFormRole && squadId) {

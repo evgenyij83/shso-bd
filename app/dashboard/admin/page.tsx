@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import AdminForms from './AdminForms'
 import StatuteEditor from './StatuteEditor'
+import AccountRequests from './AccountRequests'
 
 export default async function AdminPage() {
   const session = await getSession()
@@ -24,12 +25,22 @@ export default async function AdminPage() {
   const statuteResult = await sql`SELECT value FROM "SystemSettings" WHERE key = 'STATUTE'`
   const statute = statuteResult.length > 0 ? statuteResult[0].value : ''
 
+  const accountRequests = await sql`
+    SELECT ar.*, s.name as "squadName", u."fullName" as "requesterName"
+    FROM "AccountRequest" ar
+    LEFT JOIN "Squad" s ON ar."squadId" = s.id
+    LEFT JOIN "User" u ON ar."requestedByUserId" = u.id
+    ORDER BY ar."createdAt" ASC
+  ` as any[]
+
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem' }}>
         <Link href="/dashboard" style={{ color: 'var(--text-secondary)', textDecoration: 'none', display: 'flex', alignItems: 'center' }}><ArrowLeft size={24} /></Link>
         <h2>Панель Разработчика</h2>
       </div>
+
+      <AccountRequests requests={accountRequests} />
 
       <AdminForms squads={squads} users={users} />
       

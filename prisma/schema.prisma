@@ -21,24 +21,44 @@ model SystemSettings {
 }
 
 model User {
-  id           String   @id @default(cuid())
-  uniqueCode   String   @unique
-  role         String   // "UNIVERSITY_ADMIN", "HQ_COMMANDER", "SQUAD_COMMANDER"
-  squadId      String?  
-  squad        Squad?   @relation(fields: [squadId], references: [id])
-  sessionToken String?
-  fullName     String?
+  id              String           @id @default(cuid())
+  uniqueCode      String           @unique
+  role            String           // "UNIVERSITY_ADMIN", "HQ_COMMANDER", "SQUAD_COMMANDER"
+  squadId         String?  
+  squad           Squad?           @relation(fields: [squadId], references: [id])
+  sessionToken    String?
+  fullName        String?
+  vkLink          String?
+  accountRequests AccountRequest[]
 }
 
 model Squad {
-  id           String        @id @default(cuid())
-  name         String        @unique
-  description  String?
-  chatLink     String?
-  fighterLimit Int?
-  users        User[]
-  fighters     Fighter[]
-  applications Application[]
+  id              String           @id @default(cuid())
+  name            String           @unique
+  description     String?
+  chatLink        String?
+  fighterLimit    Int?
+  users           User[]
+  fighters        Fighter[]
+  applications    Application[]
+  accountRequests AccountRequest[]
+}
+
+model AccountRequest {
+  id              String   @id @default(cuid())
+  requestedRole   String
+  squadId         String?
+  squad           Squad?   @relation(fields: [squadId], references: [id])
+  fullName        String
+  faculty         String?
+  studyGroup      String?
+  course          Int?
+  educationForm   String?
+  phone           String?
+  vkLink          String?
+  requestedByUserId String
+  requestedBy     User     @relation(fields: [requestedByUserId], references: [id])
+  createdAt       DateTime @default(now())
 }
 
 model Fighter {

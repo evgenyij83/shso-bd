@@ -4,6 +4,8 @@ import { LogOut, Shield } from 'lucide-react'
 import Link from 'next/link'
 import sql from '@/lib/db'
 import ReadStatuteButton from './ReadStatuteButton'
+import VkLinkEditor from './VkLinkEditor'
+import InteractionPanel from './InteractionPanel'
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await getSession()
@@ -28,18 +30,32 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const statuteResult = await sql`SELECT value FROM "SystemSettings" WHERE key = 'STATUTE'`
   const statute = statuteResult.length > 0 ? statuteResult[0].value : ''
 
+  const showVkEditor = session.role === 'DEVELOPER' || session.role === 'UNIVERSITY_ADMIN'
+  const showInteractionPanel = session.role === 'UNIVERSITY_ADMIN'
+
+  let squads: any[] = []
+  if (showInteractionPanel) {
+    squads = await sql`SELECT id, name FROM "Squad" ORDER BY name ASC` as any[]
+  }
+
   return (
     <div className="layout-container">
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', padding: '1rem 1.5rem', background: 'rgba(30, 41, 59, 0.4)', backdropFilter: 'blur(10px)', borderRadius: '12px', border: '1px solid var(--glass-border)' }}>
+      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', padding: '1rem 1.5rem', background: 'rgba(30, 41, 59, 0.4)', backdropFilter: 'blur(10px)', borderRadius: '12px', border: '1px solid var(--glass-border)', flexWrap: 'wrap', gap: '0.75rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
           <Shield color="var(--accent-color)" />
           <div>
             <div style={{ fontSize: '1.25rem', fontWeight: 600 }}>База ШСО</div>
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Роль: {displayRole}</div>
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              Роль: {displayRole}
+              {showVkEditor && <VkLinkEditor currentVkLink={session.vkLink} />}
+            </div>
           </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
           <ReadStatuteButton statute={statute} />
+          {showInteractionPanel && (
+            <InteractionPanel squads={squads} hasVkLink={!!session.vkLink} />
+          )}
           {session.role === 'DEVELOPER' && (
             <Link href="/dashboard/admin" style={{ color: 'var(--text-primary)', textDecoration: 'none', background: 'rgba(59, 130, 246, 0.2)', padding: '8px 16px', borderRadius: '8px', fontSize: '0.9rem' }}>
               Панель управления

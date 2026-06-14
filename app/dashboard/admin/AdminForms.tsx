@@ -126,7 +126,10 @@ export default function AdminForms({ squads, users = [] }: { squads: Squad[], us
             </select>
 
             {selectedRole === 'UNIVERSITY_ADMIN' && (
-              <input name="fullName" placeholder="ФИО руководителя" className="input-field" required />
+              <>
+                <input name="fullName" placeholder="ФИО руководителя" className="input-field" required />
+                <input name="vkLink" placeholder="Ссылка на ВК (необязательно)" className="input-field" />
+              </>
             )}
 
             {(selectedRole === 'SQUAD_COMMANDER' || selectedRole === 'SQUAD_COMMISSAR' || selectedRole === 'HQ_COMMANDER' || selectedRole === 'HQ_COMMISSAR') && (
@@ -154,7 +157,7 @@ export default function AdminForms({ squads, users = [] }: { squads: Squad[], us
                   </select>
                 </div>
                 <input name="phone" placeholder="Телефон" className="input-field" required />
-                <input name="vkLink" placeholder="Ссылка на ВК (необязательно)" className="input-field" />
+                <input name="vkLink" placeholder="Ссылка на ВК (обязательно)" className="input-field" required />
               </div>
             )}
 

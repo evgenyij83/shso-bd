@@ -75,6 +75,7 @@ export async function getSession() {
       role: user.role, 
       squadId: user.squadId,
       fullName: user.fullName,
+      vkLink: user.vkLink || null,
       squadName
     }
   } catch (e) {
