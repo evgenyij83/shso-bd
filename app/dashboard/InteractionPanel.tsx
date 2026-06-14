@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
-import { MessageSquare, UserPlus, Send, X, Check, ChevronDown } from 'lucide-react'
+import { MessageSquare, UserPlus, Send, X, Check, ChevronDown, Award } from 'lucide-react'
 import { submitAccountRequest } from '@/app/actions/accountRequests'
 import { getAvailableRecipients, sendBulkMessage } from '@/app/actions/messaging'
+import { getPendingAwardNominations, approveByHQ, approveByUniversity, getUniversityAdmins } from '@/app/actions/awards'
 
 type Squad = { id: string, name: string }
 type Recipient = { id: string, fullName: string, role: string, squadName: string | null, hasVk: boolean }
@@ -14,7 +15,7 @@ export default function InteractionPanel({ squads, hasVkLink, userRole }: { squa
   
   const [isOpen, setIsOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
-  const [activeTab, setActiveTab] = useState<'request' | 'message'>('request')
+  const [activeTab, setActiveTab] = useState<'request' | 'message' | 'awards'>('request')
 
   // Request form state
   const [reqLoading, setReqLoading] = useState(false)
@@ -31,6 +32,18 @@ export default function InteractionPanel({ squads, hasVkLink, userRole }: { squa
   const [msgSuccess, setMsgSuccess] = useState('')
   const [recipientsLoaded, setRecipientsLoaded] = useState(false)
 
+  // Awards state
+  const [nominations, setNominations] = useState<any[]>([])
+  const [awardsLoaded, setAwardsLoaded] = useState(false)
+  const [selectedNominees, setSelectedNominees] = useState<Record<string, string[]>>({})
+  const [targetAdmin, setTargetAdmin] = useState('')
+  const [admins, setAdmins] = useState<any[]>([])
+  const [awardLoading, setAwardLoading] = useState(false)
+  const [awardError, setAwardError] = useState('')
+  const [awardSuccess, setAwardSuccess] = useState('')
+
+  const showAwardsTab = isHQRole || userRole === 'UNIVERSITY_ADMIN'
+
   useEffect(() => { setMounted(true) }, [])
 
   useEffect(() => {
@@ -46,9 +59,21 @@ export default function InteractionPanel({ squads, hasVkLink, userRole }: { squa
     setRecipientsLoaded(true)
   }
 
-  function handleTabChange(tab: 'request' | 'message') {
+  function handleTabChange(tab: 'request' | 'message' | 'awards') {
     setActiveTab(tab)
     if (tab === 'message') loadRecipients()
+    if (tab === 'awards') loadAwards()
+  }
+
+  async function loadAwards() {
+    if (awardsLoaded) return
+    const data = await getPendingAwardNominations()
+    setNominations(data as any[])
+    if (isHQRole) {
+      const adminList = await getUniversityAdmins()
+      setAdmins(adminList as any[])
+    }
+    setAwardsLoaded(true)
   }
 
   async function handleSubmitRequest(e: React.FormEvent<HTMLFormElement>) {
@@ -132,19 +157,27 @@ export default function InteractionPanel({ squads, hasVkLink, userRole }: { squa
             </div>
 
             {/* Tabs */}
-            <div style={{ display: 'flex', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+            <div style={{ display: 'flex', borderBottom: '1px solid rgba(255,255,255,0.1)', flexWrap: 'wrap' }}>
               <button 
                 onClick={() => handleTabChange('request')}
-                style={{ flex: 1, padding: '1rem', background: activeTab === 'request' ? 'rgba(59, 130, 246, 0.15)' : 'transparent', border: 'none', borderBottom: activeTab === 'request' ? '2px solid #3b82f6' : '2px solid transparent', color: activeTab === 'request' ? '#3b82f6' : 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '0.95rem', transition: 'all 0.2s' }}
+                style={{ flex: 1, padding: '0.75rem', background: activeTab === 'request' ? 'rgba(59, 130, 246, 0.15)' : 'transparent', border: 'none', borderBottom: activeTab === 'request' ? '2px solid #3b82f6' : '2px solid transparent', color: activeTab === 'request' ? '#3b82f6' : 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '0.85rem', transition: 'all 0.2s' }}
               >
-                <UserPlus size={16} /> Заявка на аккаунт
+                <UserPlus size={14} /> Заявка
               </button>
               <button 
                 onClick={() => handleTabChange('message')}
-                style={{ flex: 1, padding: '1rem', background: activeTab === 'message' ? 'rgba(59, 130, 246, 0.15)' : 'transparent', border: 'none', borderBottom: activeTab === 'message' ? '2px solid #3b82f6' : '2px solid transparent', color: activeTab === 'message' ? '#3b82f6' : 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '0.95rem', transition: 'all 0.2s' }}
+                style={{ flex: 1, padding: '0.75rem', background: activeTab === 'message' ? 'rgba(59, 130, 246, 0.15)' : 'transparent', border: 'none', borderBottom: activeTab === 'message' ? '2px solid #3b82f6' : '2px solid transparent', color: activeTab === 'message' ? '#3b82f6' : 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '0.85rem', transition: 'all 0.2s' }}
               >
-                <Send size={16} /> Оставить сообщение
+                <Send size={14} /> Сообщение
               </button>
+              {showAwardsTab && (
+                <button 
+                  onClick={() => handleTabChange('awards')}
+                  style={{ flex: 1, padding: '0.75rem', background: activeTab === 'awards' ? 'rgba(251, 191, 36, 0.15)' : 'transparent', border: 'none', borderBottom: activeTab === 'awards' ? '2px solid #fbbf24' : '2px solid transparent', color: activeTab === 'awards' ? '#fbbf24' : 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '0.85rem', transition: 'all 0.2s' }}
+                >
+                  <Award size={14} /> Награждения
+                </button>
+              )}
             </div>
 
             {/* Content */}
@@ -296,6 +329,101 @@ export default function InteractionPanel({ squads, hasVkLink, userRole }: { squa
                   >
                     {msgLoading ? 'Отправка...' : 'Отправить сообщение'}
                   </button>
+                </div>
+              )}
+              {/* === Tab: Awards === */}
+              {activeTab === 'awards' && showAwardsTab && (
+                <div>
+                  <h4 style={{ color: '#fbbf24', fontSize: '0.9rem', marginBottom: '1rem' }}>
+                    {isHQRole ? 'Списки на согласование' : 'Списки на утверждение'}
+                  </h4>
+
+                  {nominations.length === 0 && (
+                    <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                      {awardsLoaded ? 'Нет номинаций для рассмотрения' : 'Загрузка...'}
+                    </div>
+                  )}
+
+                  {nominations.map((nom: any) => (
+                    <div key={nom.id} style={{ background: 'rgba(0,0,0,0.2)', borderRadius: '12px', border: '1px solid rgba(251, 191, 36, 0.2)', padding: '1.25rem', marginBottom: '1rem' }}>
+                      <div style={{ marginBottom: '1rem' }}>
+                        <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Отряд: {nom.squadName}</div>
+                        <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>От: {nom.nominatorName}</div>
+                      </div>
+
+                      {(nom.nominees || []).map((nominee: any) => (
+                        <label key={nominee.id} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', padding: '8px', borderBottom: '1px solid rgba(255,255,255,0.05)', cursor: 'pointer' }}>
+                          <input
+                            type="checkbox"
+                            checked={(selectedNominees[nom.id] || []).includes(nominee.id)}
+                            onChange={() => {
+                              setSelectedNominees(prev => {
+                                const current = prev[nom.id] || []
+                                const updated = current.includes(nominee.id)
+                                  ? current.filter((id: string) => id !== nominee.id)
+                                  : [...current, nominee.id]
+                                return { ...prev, [nom.id]: updated }
+                              })
+                            }}
+                            style={{ accentColor: '#fbbf24', marginTop: '4px' }}
+                          />
+                          <div>
+                            <div style={{ fontSize: '0.9rem', color: 'var(--text-primary)', fontWeight: 500 }}>{nominee.fighterName}</div>
+                            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '2px' }}>{nominee.description}</div>
+                          </div>
+                        </label>
+                      ))}
+
+                      {/* HQ: select admin to forward */}
+                      {isHQRole && (
+                        <select
+                          value={targetAdmin}
+                          onChange={e => setTargetAdmin(e.target.value)}
+                          className="input-field"
+                          style={{ marginTop: '1rem', width: '100%' }}
+                        >
+                          <option value="">-- Выберите руководителя --</option>
+                          {admins.map((a: any) => (
+                            <option key={a.id} value={a.id}>{a.fullName || 'Руководитель'}</option>
+                          ))}
+                        </select>
+                      )}
+
+                      {awardError && <div style={{ color: 'var(--danger-color)', fontSize: '0.85rem', marginTop: '0.5rem' }}>{awardError}</div>}
+                      {awardSuccess && <div style={{ color: '#34d399', fontSize: '0.85rem', marginTop: '0.5rem' }}>{awardSuccess}</div>}
+
+                      <button
+                        onClick={async () => {
+                          const ids = selectedNominees[nom.id] || []
+                          if (ids.length === 0) { setAwardError('Выберите хотя бы одного кандидата'); return }
+                          setAwardLoading(true)
+                          setAwardError('')
+                          setAwardSuccess('')
+                          let res
+                          if (isHQRole) {
+                            if (!targetAdmin) { setAwardError('Выберите руководителя'); setAwardLoading(false); return }
+                            res = await approveByHQ(nom.id, ids, targetAdmin)
+                          } else {
+                            res = await approveByUniversity(nom.id, ids)
+                          }
+                          if (res.error) {
+                            setAwardError(res.error)
+                          } else {
+                            setAwardSuccess(isHQRole ? 'Согласовано и отправлено руководителю!' : 'Утверждено!')
+                            setNominations(prev => prev.filter((n: any) => n.id !== nom.id))
+                            if (!isHQRole && (res as any).nominationId) {
+                              window.open(`/api/export/awards?nominationId=${(res as any).nominationId}`, '_blank')
+                            }
+                          }
+                          setAwardLoading(false)
+                        }}
+                        disabled={awardLoading}
+                        style={{ marginTop: '1rem', width: '100%', padding: '10px', background: 'rgba(251, 191, 36, 0.2)', color: '#fbbf24', border: '1px solid rgba(251, 191, 36, 0.3)', borderRadius: '8px', cursor: 'pointer', fontSize: '0.9rem' }}
+                      >
+                        {awardLoading ? 'Обработка...' : isHQRole ? 'Согласовать и отправить' : 'Утвердить и скачать Word'}
+                      </button>
+                    </div>
+                  ))}
                 </div>
               )}
 

@@ -37,7 +37,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
   let pendingRequestsCount = 0
   if (session.role === 'DEVELOPER') {
     const reqResult = await sql`SELECT COUNT(*) as count FROM "AccountRequest"`
-    pendingRequestsCount = parseInt(reqResult[0].count, 10)
+    const idReqResult = await sql`SELECT COUNT(*) as count FROM "IdentifierRequest" WHERE status = 'PENDING'`
+    pendingRequestsCount = parseInt(reqResult[0].count, 10) + parseInt(idReqResult[0].count, 10)
   }
 
   let squads: any[] = []

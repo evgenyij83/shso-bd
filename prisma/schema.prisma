@@ -36,12 +36,18 @@ model Squad {
   id              String           @id @default(cuid())
   name            String           @unique
   description     String?
+  workType        String?
+  workPlace       String?
+  workSchedule    String?
+  workPeriod      String?
   chatLink        String?
   fighterLimit    Int?
   users           User[]
   fighters        Fighter[]
   applications    Application[]
   accountRequests AccountRequest[]
+  awardNominations AwardNomination[]
+  incidentReports IncidentReport[]
 }
 
 model AccountRequest {
@@ -59,6 +65,16 @@ model AccountRequest {
   requestedByUserId String
   requestedBy     User     @relation(fields: [requestedByUserId], references: [id])
   createdAt       DateTime @default(now())
+}
+
+model IdentifierRequest {
+  id        String   @id @default(cuid())
+  fullName  String
+  vkLink    String
+  userId    String
+  status    String   @default("PENDING") // PENDING, PROCESSED
+  newCode   String?
+  createdAt DateTime @default(now())
 }
 
 model Fighter {
@@ -88,3 +104,37 @@ model Application {
   vkLink        String?
   createdAt     DateTime @default(now())
 }
+
+model AwardNomination {
+  id                String          @id @default(cuid())
+  squadId           String
+  squad             Squad           @relation(fields: [squadId], references: [id])
+  nominatedByUserId String
+  status            String          @default("PENDING_HQ") // PENDING_HQ, PENDING_UNIVERSITY, APPROVED
+  approvedByHqUserId String?
+  targetAdminUserId  String?
+  nominees          AwardNominee[]
+  createdAt         DateTime        @default(now())
+}
+
+model AwardNominee {
+  id            String          @id @default(cuid())
+  nominationId  String
+  nomination    AwardNomination @relation(fields: [nominationId], references: [id], onDelete: Cascade)
+  fighterName   String
+  fighterId     String?
+  description   String
+  approvedByHq  Boolean         @default(false)
+  approvedByUni Boolean         @default(false)
+}
+
+model IncidentReport {
+  id                String   @id @default(cuid())
+  squadId           String
+  squad             Squad    @relation(fields: [squadId], references: [id])
+  reportedByUserId  String
+  description       String
+  involvedNames     String   // JSON array of fighter names
+  createdAt         DateTime @default(now())
+}
+

@@ -6,6 +6,7 @@ import { ArrowLeft } from 'lucide-react'
 import AdminForms from './AdminForms'
 import StatuteEditor from './StatuteEditor'
 import AccountRequests from './AccountRequests'
+import IdentifierRequests from './IdentifierRequests'
 
 export default async function AdminPage() {
   const session = await getSession()
@@ -33,6 +34,14 @@ export default async function AdminPage() {
     ORDER BY ar."createdAt" ASC
   ` as any[]
 
+  const identifierRequests = await sql`
+    SELECT ir.*, u."uniqueCode" as "currentCode", u.role
+    FROM "IdentifierRequest" ir
+    JOIN "User" u ON ir."userId" = u.id
+    WHERE ir.status = 'PENDING'
+    ORDER BY ir."createdAt" ASC
+  ` as any[]
+
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem' }}>
@@ -41,6 +50,7 @@ export default async function AdminPage() {
       </div>
 
       <AccountRequests requests={accountRequests} />
+      <IdentifierRequests requests={identifierRequests} />
 
       <AdminForms squads={squads} users={users} />
       

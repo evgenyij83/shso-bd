@@ -1,9 +1,10 @@
 import sql from '@/lib/db'
 import Link from 'next/link'
 import { ArrowLeft, Shield } from 'lucide-react'
+import SquadCard from './SquadCard'
 
 export default async function ApplyPage() {
-  const squads = await sql`SELECT * FROM "Squad" ORDER BY name ASC` as any[]
+  const squads = await sql`SELECT id, name, "workType", "workPlace", "workSchedule", "workPeriod" FROM "Squad" ORDER BY name ASC` as any[]
 
   return (
     <div style={{ padding: '2rem', maxWidth: '1200px', margin: '0 auto' }}>
@@ -16,16 +17,8 @@ export default async function ApplyPage() {
       </header>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
-        {squads.map(squad => (
-          <Link href={`/apply/${squad.id}`} key={squad.id} style={{ textDecoration: 'none' }}>
-            <div className="glass-panel hover-effect" style={{ padding: '2rem', textAlign: 'center', cursor: 'pointer', transition: 'all 0.2s', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', height: '100%' }}>
-              <h3 style={{ fontSize: '1.5rem', color: 'var(--text-primary)', marginBottom: squad.description ? '0.5rem' : '1.5rem' }}>{squad.name}</h3>
-              {squad.description && (
-                <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '1.5rem', lineHeight: 1.4, flexGrow: 1 }}>{squad.description}</p>
-              )}
-              <p style={{ color: 'var(--accent-color)', fontSize: '0.9rem', fontWeight: 600, marginTop: 'auto' }}>Подать заявку &rarr;</p>
-            </div>
-          </Link>
+        {squads.map((squad: any) => (
+          <SquadCard key={squad.id} squad={squad} />
         ))}
       </div>
       

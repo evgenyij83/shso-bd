@@ -9,6 +9,7 @@ import EditDescriptionButton from './EditDescriptionButton'
 import EditFighterLimit from './EditFighterLimit'
 import EditChatLinkButton from './EditChatLinkButton'
 import ExportModal from '../../ExportModal'
+import CommanderCorner from './CommanderCorner'
 
 export default async function SquadPage(props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
@@ -42,6 +43,8 @@ export default async function SquadPage(props: { params: Promise<{ id: string }>
 
   const canEdit = session.role === 'DEVELOPER' || session.role === 'UNIVERSITY_ADMIN' || session.role === 'HQ_COMMANDER' || session.role === 'HQ_COMMISSAR' || session.role === 'SQUAD_COMMANDER' || session.role === 'SQUAD_COMMISSAR'
 
+  const isSquadLeader = session.role === 'SQUAD_COMMANDER' || session.role === 'SQUAD_COMMISSAR'
+
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
@@ -58,8 +61,16 @@ export default async function SquadPage(props: { params: Promise<{ id: string }>
         canSetLimit={session.role === 'UNIVERSITY_ADMIN' || session.role === 'DEVELOPER'} 
       />
 
-      {canEdit && <EditDescriptionButton squadId={squad.id} initialDescription={squad.description} />}
+      {canEdit && <EditDescriptionButton squadId={squad.id} initialData={{ workType: squad.workType, workPlace: squad.workPlace, workSchedule: squad.workSchedule, workPeriod: squad.workPeriod }} />}
       {canEdit && <EditChatLinkButton squadId={squad.id} initialLink={squad.chatLink} />}
+
+      {isSquadLeader && (
+        <CommanderCorner 
+          squadId={squad.id} 
+          fighters={fighters.map((f: any) => ({ id: f.id, fullName: f.fullName, position: f.position }))} 
+          userRole={session.role} 
+        />
+      )}
       
       <ApplicationsList applications={applications} squadId={squad.id} canEdit={canEdit} />
       

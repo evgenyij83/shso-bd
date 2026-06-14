@@ -126,7 +126,10 @@ export async function updateSquadDescription(formData: FormData) {
   if (!session) return { error: 'Необходима авторизация' }
 
   const squadId = formData.get('squadId') as string
-  const description = formData.get('description') as string
+  const workType = formData.get('workType') as string
+  const workPlace = formData.get('workPlace') as string
+  const workSchedule = formData.get('workSchedule') as string
+  const workPeriod = formData.get('workPeriod') as string
 
   const isGlobalAdmin = ['DEVELOPER', 'UNIVERSITY_ADMIN', 'HQ_COMMANDER', 'HQ_COMMISSAR'].includes(session.role)
   const isSquadAdmin = ['SQUAD_COMMANDER', 'SQUAD_COMMISSAR'].includes(session.role) && session.squadId === squadId
@@ -134,7 +137,7 @@ export async function updateSquadDescription(formData: FormData) {
   if (!isGlobalAdmin && !isSquadAdmin) return { error: 'Недостаточно прав' }
 
   try {
-    await sql`UPDATE "Squad" SET description = ${description || null} WHERE id = ${squadId}`
+    await sql`UPDATE "Squad" SET "workType" = ${workType || null}, "workPlace" = ${workPlace || null}, "workSchedule" = ${workSchedule || null}, "workPeriod" = ${workPeriod || null} WHERE id = ${squadId}`
     revalidatePath('/dashboard')
     revalidatePath(`/dashboard/squad/${squadId}`)
     revalidatePath('/apply')
