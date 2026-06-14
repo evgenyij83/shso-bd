@@ -79,11 +79,11 @@ export async function GET(request: NextRequest) {
     return new NextResponse(buffer as unknown as BodyInit, {
       headers: {
         'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        'Content-Disposition': `attachment; filename=awards_${nom.squadName.replace(/\s+/g, '_')}.docx`
+        'Content-Disposition': `attachment; filename*=UTF-8''awards_${encodeURIComponent(nom.squadName.replace(/\s+/g, '_'))}.docx`
       }
     })
-  } catch (e) {
+  } catch (e: any) {
     console.error(e)
-    return NextResponse.json({ error: 'Ошибка при генерации документа' }, { status: 500 })
+    return NextResponse.json({ error: 'Ошибка при генерации документа', details: e.message, stack: e.stack }, { status: 500 })
   }
 }
