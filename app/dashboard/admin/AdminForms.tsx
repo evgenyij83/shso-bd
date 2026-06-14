@@ -128,7 +128,7 @@ export default function AdminForms({ squads, users = [] }: { squads: Squad[], us
             {selectedRole === 'UNIVERSITY_ADMIN' && (
               <>
                 <input name="fullName" placeholder="ФИО руководителя" className="input-field" required />
-                <input name="vkLink" placeholder="Ссылка на ВК (необязательно)" className="input-field" />
+                <input name="vkLink" placeholder="Ссылка на ВК (обязательно)" className="input-field" required />
               </>
             )}
 

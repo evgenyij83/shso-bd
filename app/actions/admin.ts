@@ -37,11 +37,9 @@ export async function addUser(formData: FormData) {
 
   if (isSquadCommander && !squadId) return { error: 'Для этой роли необходимо выбрать отряд' }
 
-  // ВК-ссылка обязательна для командиров/комиссаров
-  if (isFormRole) {
-    const vkLinkCheck = formData.get('vkLink') as string
-    if (!vkLinkCheck || !vkLinkCheck.trim()) return { error: 'Для этой роли обязательно указать ссылку на ВК' }
-  }
+  // ВК-ссылка обязательна для всех ролей (кроме DEVELOPER, но DEVELOPER не создается через эту форму)
+  const vkLinkCheck = formData.get('vkLink') as string
+  if (!vkLinkCheck || !vkLinkCheck.trim()) return { error: 'Для создания аккаунта обязательно указать ссылку на ВК' }
 
   try {
     if (isSquadCommander && squadId) {
