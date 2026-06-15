@@ -5,7 +5,8 @@ import EventDetailsClient from './EventDetailsClient'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 
-export default async function EventPage({ params }: { params: { id: string } }) {
+export default async function EventPage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const session = await getSession()
   if (!session) redirect('/')
 
@@ -53,6 +54,7 @@ export default async function EventPage({ params }: { params: { id: string } }) 
         <h1 style={{ margin: '0 0 1rem 0', fontSize: '2rem', color: 'var(--accent-color)' }}>{event.title}</h1>
         <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>
           Создано: {event.authorName} • {new Date(event.createdAt).toLocaleDateString('ru-RU')}
+          {event.maxParticipants !== null && ` • Лимит: ${event.maxParticipants} чел.`}
         </p>
 
         <div style={{ marginBottom: '1.5rem' }}>
@@ -77,6 +79,8 @@ export default async function EventPage({ params }: { params: { id: string } }) 
             eventId={event.id} 
             fighters={fighters} 
             hasSubmitted={hasSubmitted} 
+            maxParticipants={event.maxParticipants}
+            currentParticipantsCount={participants.length}
           />
         )}
       </div>

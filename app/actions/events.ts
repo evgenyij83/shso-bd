@@ -17,16 +17,18 @@ export async function createEvent(formData: FormData) {
   const description = formData.get('description') as string
   const requirements = formData.get('requirements') as string
   const chatLink = formData.get('chatLink') as string
+  const maxParticipantsStr = formData.get('maxParticipants') as string
+  const maxParticipants = maxParticipantsStr ? parseInt(maxParticipantsStr, 10) : null
 
   try {
     const res = await sql`
-      INSERT INTO "Event" (id, title, description, requirements, "chatLink", "createdById", "createdAt")
-      VALUES (${Math.random().toString(36).substring(2, 15)}, ${title}, ${description}, ${requirements}, ${chatLink || null}, ${session.userId}, NOW())
+      INSERT INTO "Event" (id, title, description, requirements, "chatLink", "maxParticipants", "createdById", "createdAt")
+      VALUES (${Math.random().toString(36).substring(2, 15)}, ${title}, ${description}, ${requirements}, ${chatLink || null}, ${maxParticipants}, ${session.userId}, NOW())
       RETURNING *
     `
 
-    // Уведомление всем
-    const users = await sql`SELECT "vkLink" FROM "User" WHERE "vkLink" IS NOT NULL`
+    // Уведомление всем уникальным пользователям
+    const users = await sql`SELECT DISTINCT "vkLink" FROM "User" WHERE "vkLink" IS NOT NULL`
     
     let senderName = session.fullName || 'Руководитель'
     if (session.role === 'DEVELOPER') {
@@ -56,34 +58,50 @@ export async function submitFightersToEvent(eventId: string, fighterIds: string[
   }
 
   try {
-    // Проверка, что отряд еще не подавал бойцов
-    const existingSubmission = await sql`SELECT id FROM "EventSubmission" WHERE "eventId" = ${eventId} AND "squadId" = ${session.squadId}`
-    if (existingSubmission.length > 0) {
-      return { error: 'Ваш отряд уже подал заявку на это мероприятие' }
-    }
+    const eventData = await sql.begin(async (tx) => {
+      // 1. Проверяем, подавал ли отряд
+      const existingSubmission = await tx`SELECT id FROM "EventSubmission" WHERE "eventId" = ${eventId} AND "squadId" = ${session.squadId}`
+      if (existingSubmission.length > 0) {
+        throw new Error('Ваш отряд уже подал заявку на это мероприятие')
+      }
 
-    const eventRes = await sql`SELECT title, "chatLink" FROM "Event" WHERE id = ${eventId}`
-    if (eventRes.length === 0) return { error: 'Мероприятие не найдено' }
-    const event = eventRes[0] as any
+      // 2. Блокируем мероприятие для обновления, чтобы проверить лимиты
+      const eventRes = await tx`SELECT title, "chatLink", "maxParticipants" FROM "Event" WHERE id = ${eventId} FOR UPDATE`
+      if (eventRes.length === 0) throw new Error('Мероприятие не найдено')
+      const event = eventRes[0] as any
 
-    // Создаем запись EventSubmission
-    await sql`INSERT INTO "EventSubmission" (id, "eventId", "squadId", "createdAt") VALUES (${Math.random().toString(36).substring(2, 15)}, ${eventId}, ${session.squadId}, NOW())`
+      // 3. Считаем сколько уже занято
+      if (event.maxParticipants !== null) {
+        const countRes = await tx`SELECT COUNT(*) as c FROM "EventParticipant" WHERE "eventId" = ${eventId}`
+        const currentCount = parseInt(countRes[0].c, 10)
+        
+        if (currentCount + fighterIds.length > event.maxParticipants) {
+          throw new Error(`Превышен лимит участников. Свободных мест: ${event.maxParticipants - currentCount}`)
+        }
+      }
 
-    // Добавляем бойцов в EventParticipant
+      // Создаем запись EventSubmission
+      await tx`INSERT INTO "EventSubmission" (id, "eventId", "squadId", "createdAt") VALUES (${Math.random().toString(36).substring(2, 15)}, ${eventId}, ${session.squadId}, NOW())`
+
+      // Добавляем бойцов в EventParticipant
+      for (const fighterId of fighterIds) {
+        await tx`
+          INSERT INTO "EventParticipant" (id, "eventId", "fighterId", "squadId", "createdAt")
+          VALUES (${Math.random().toString(36).substring(2, 15)}, ${eventId}, ${fighterId}, ${session.squadId}, NOW())
+        `
+      }
+      return event
+    })
+
+    // Уведомления (после успешной транзакции)
     for (const fighterId of fighterIds) {
-      await sql`
-        INSERT INTO "EventParticipant" (id, "eventId", "fighterId", "squadId", "createdAt")
-        VALUES (${Math.random().toString(36).substring(2, 15)}, ${eventId}, ${fighterId}, ${session.squadId}, NOW())
-      `
-
-      // Отправляем уведомление бойцу
       const fighterRes = await sql`SELECT "vkLink" FROM "Fighter" WHERE id = ${fighterId}`
       if (fighterRes.length > 0) {
         const fighter = fighterRes[0] as any
         if (fighter.vkLink) {
-          let msg = `Вы поданы на мероприятие ${event.title}.`
-          if (event.chatLink) {
-            msg += `\nСсылка на общий чат: ${event.chatLink}`
+          let msg = `Вы поданы на мероприятие ${eventData.title}.`
+          if (eventData.chatLink) {
+            msg += `\nСсылка на общий чат: ${eventData.chatLink}`
           }
           await sendVkMessage(fighter.vkLink, msg)
         }
@@ -94,6 +112,6 @@ export async function submitFightersToEvent(eventId: string, fighterIds: string[
     return { success: true }
   } catch (e: any) {
     console.error(e)
-    return { error: 'Ошибка при подаче заявки' }
+    return { error: e.message || 'Ошибка при подаче заявки' }
   }
 }

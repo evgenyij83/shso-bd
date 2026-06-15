@@ -1,17 +1,28 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Users, Check } from 'lucide-react'
 import { submitFightersToEvent } from '@/app/actions/events'
+import { useRouter } from 'next/navigation'
 
 type Fighter = { id: string, fullName: string, position: string }
 
-export default function EventDetailsClient({ eventId, fighters, hasSubmitted }: { eventId: string, fighters: Fighter[], hasSubmitted: boolean }) {
+export default function EventDetailsClient({ eventId, fighters, hasSubmitted, maxParticipants, currentParticipantsCount }: { eventId: string, fighters: Fighter[], hasSubmitted: boolean, maxParticipants: number | null, currentParticipantsCount: number }) {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const router = useRouter()
+
+  // Автоматическое обновление данных на странице, чтобы видеть актуальное количество мест
+  useEffect(() => {
+    if (!isModalOpen) return
+    const interval = setInterval(() => {
+      router.refresh()
+    }, 5000)
+    return () => clearInterval(interval)
+  }, [isModalOpen, router])
 
   if (hasSubmitted) {
     return (
@@ -22,10 +33,20 @@ export default function EventDetailsClient({ eventId, fighters, hasSubmitted }: 
     )
   }
 
+  const remainingSpots = maxParticipants !== null ? Math.max(0, maxParticipants - currentParticipantsCount) : null
+
   const toggleFighter = (id: string) => {
     const next = new Set(selectedIds)
-    if (next.has(id)) next.delete(id)
-    else next.add(id)
+    if (next.has(id)) {
+      next.delete(id)
+    } else {
+      if (remainingSpots !== null && next.size >= remainingSpots) {
+        setError(`Достигнут лимит свободных мест (${remainingSpots}).`)
+        return
+      }
+      next.add(id)
+      setError('')
+    }
     setSelectedIds(next)
   }
 
@@ -35,6 +56,11 @@ export default function EventDetailsClient({ eventId, fighters, hasSubmitted }: 
       return
     }
     
+    if (remainingSpots !== null && selectedIds.size > remainingSpots) {
+      setError(`Вы выбрали слишком много бойцов. Свободных мест: ${remainingSpots}`)
+      return
+    }
+
     if (!confirm('Вы уверены? После подачи заявки вы не сможете изменить список участников от вашего отряда.')) return
 
     setLoading(true)
@@ -53,8 +79,8 @@ export default function EventDetailsClient({ eventId, fighters, hasSubmitted }: 
 
   return (
     <div style={{ marginTop: '2rem' }}>
-      <button onClick={() => setIsModalOpen(true)} className="btn-primary">
-        <Users size={18} /> Предоставить бойцов
+      <button onClick={() => setIsModalOpen(true)} className="btn-primary" disabled={remainingSpots === 0}>
+        <Users size={18} /> {remainingSpots === 0 ? 'Мест нет' : 'Предоставить бойцов'}
       </button>
 
       <AnimatePresence>
@@ -63,13 +89,22 @@ export default function EventDetailsClient({ eventId, fighters, hasSubmitted }: 
             <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }} className="glass-panel" style={{ width: '100%', maxWidth: '600px', maxHeight: '80vh', display: 'flex', flexDirection: 'column', padding: '2rem', background: 'var(--bg-color)' }}>
               <h2>Выберите бойцов для участия</h2>
               
+              {maxParticipants !== null && (
+                <div style={{ marginBottom: '1rem', padding: '0.75rem', background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.2)', borderRadius: '8px', color: 'var(--text-primary)' }}>
+                  Всего мест: {maxParticipants} <br/>
+                  Уже занято: {currentParticipantsCount} <br/>
+                  <strong style={{ color: remainingSpots === 0 ? 'var(--danger-color)' : 'var(--accent-color)' }}>Свободно: {remainingSpots}</strong>
+                </div>
+              )}
+
               <div style={{ flex: 1, overflowY: 'auto', margin: '1rem 0', display: 'flex', flexDirection: 'column', gap: '0.5rem', paddingRight: '0.5rem' }}>
                 {fighters.map(f => (
-                  <label key={f.id} style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.75rem', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', cursor: 'pointer' }}>
+                  <label key={f.id} style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.75rem', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', cursor: 'pointer', opacity: (remainingSpots !== null && selectedIds.size >= remainingSpots && !selectedIds.has(f.id)) ? 0.5 : 1 }}>
                     <input 
                       type="checkbox" 
                       checked={selectedIds.has(f.id)} 
                       onChange={() => toggleFighter(f.id)}
+                      disabled={remainingSpots !== null && selectedIds.size >= remainingSpots && !selectedIds.has(f.id)}
                       style={{ width: '18px', height: '18px' }}
                     />
                     <div>
@@ -84,7 +119,7 @@ export default function EventDetailsClient({ eventId, fighters, hasSubmitted }: 
               {error && <p style={{ color: 'var(--danger-color)', fontSize: '0.9rem', margin: '0 0 1rem 0' }}>{error}</p>}
               
               <div style={{ display: 'flex', gap: '1rem' }}>
-                <button onClick={handleSubmit} className="btn-primary" disabled={loading || selectedIds.size === 0} style={{ flex: 1, justifyContent: 'center' }}>
+                <button onClick={handleSubmit} className="btn-primary" disabled={loading || selectedIds.size === 0 || (remainingSpots !== null && selectedIds.size > remainingSpots)} style={{ flex: 1, justifyContent: 'center' }}>
                   {loading ? 'Отправка...' : `Отправить (${selectedIds.size})`}
                 </button>
                 <button onClick={() => setIsModalOpen(false)} className="btn-secondary" style={{ flex: 1, justifyContent: 'center' }}>

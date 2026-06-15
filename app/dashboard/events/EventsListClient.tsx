@@ -69,6 +69,7 @@ export default function EventsListClient({ events, canCreate }: { events: EventT
                 <textarea name="description" placeholder="Описание" className="input-field" rows={3} required />
                 <textarea name="requirements" placeholder="Требования к участникам" className="input-field" rows={3} required />
                 <input name="chatLink" placeholder="Ссылка на общую беседу ВК (необязательно)" className="input-field" />
+                <input name="maxParticipants" type="number" min="1" placeholder="Макс. количество участников (необязательно)" className="input-field" />
 
                 {error && <p style={{ color: 'var(--danger-color)', fontSize: '0.9rem', margin: 0 }}>{error}</p>}
                 
