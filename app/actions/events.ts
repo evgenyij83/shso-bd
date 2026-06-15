@@ -1,6 +1,6 @@
 'use server'
 
-import { sql } from '@/lib/db'
+import sql from '@/lib/db'
 import { getSession } from '@/app/actions/auth'
 import { revalidatePath } from 'next/cache'
 import { sendVkMessage } from '@/lib/vkBot'
