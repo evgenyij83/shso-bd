@@ -46,7 +46,7 @@ export default async function SquadPage(props: { params: Promise<{ id: string }>
   const isSquadLeader = session.role === 'SQUAD_COMMANDER' || session.role === 'SQUAD_COMMISSAR'
 
   let allSquads: any[] = []
-  if (session.role === 'HQ_COMMANDER' || session.role === 'HQ_COMMISSAR' || session.role === 'DEVELOPER') {
+  if (['HQ_COMMANDER', 'HQ_COMMISSAR', 'DEVELOPER', 'UNIVERSITY_ADMIN'].includes(session.role)) {
     allSquads = await sql`SELECT id, name FROM "Squad" ORDER BY name ASC` as any[]
   }
 

@@ -126,12 +126,13 @@ export async function editFighter(formData: FormData) {
 export async function transferFighter(fighterId: string, newSquadId: string) {
   const session = await getSession()
   if (!session) return { error: 'Не авторизован' }
-  if (session.role !== 'UNIVERSITY_ADMIN' && session.role !== 'DEVELOPER') {
+  const allowedRoles = ['UNIVERSITY_ADMIN', 'DEVELOPER', 'HQ_COMMANDER', 'HQ_COMMISSAR']
+  if (!allowedRoles.includes(session.role)) {
     return { error: 'Недостаточно прав для перевода' }
   }
 
   try {
-    const fighterResult = await sql`SELECT "fullName", "squadId" FROM "Fighter" WHERE id = ${fighterId}`
+    const fighterResult = await sql`SELECT "fullName", "squadId", position FROM "Fighter" WHERE id = ${fighterId}`
     if (fighterResult.length === 0) return { error: 'Боец не найден' }
     const fighter = fighterResult[0] as any
     const oldSquadId = fighter.squadId
@@ -139,9 +140,20 @@ export async function transferFighter(fighterId: string, newSquadId: string) {
     if (oldSquadId === newSquadId) return { error: 'Боец уже в этом отряде' }
 
     const oldSquadResult = await sql`SELECT name FROM "Squad" WHERE id = ${oldSquadId}`
-    const newSquadResult = await sql`SELECT name FROM "Squad" WHERE id = ${newSquadId}`
+    const newSquadResult = await sql`SELECT name, "fighterLimit" FROM "Squad" WHERE id = ${newSquadId}`
+    const newSquad = newSquadResult[0]
     
-    await sql`UPDATE "Fighter" SET "squadId" = ${newSquadId} WHERE id = ${fighterId}`
+    let newPosition = fighter.position
+    
+    if (newSquad?.fighterLimit !== null && fighter.position !== 'Кандидат') {
+      const activeFightersCountResult = await sql`SELECT COUNT(*) as count FROM "Fighter" WHERE "squadId" = ${newSquadId} AND position != 'Кандидат'`
+      const activeFightersCount = parseInt(activeFightersCountResult[0].count, 10)
+      if (activeFightersCount >= newSquad.fighterLimit) {
+        newPosition = 'Кандидат'
+      }
+    }
+    
+    await sql`UPDATE "Fighter" SET "squadId" = ${newSquadId}, position = ${newPosition} WHERE id = ${fighterId}`
 
     revalidatePath(`/dashboard/squad/${oldSquadId}`)
     revalidatePath(`/dashboard/squad/${newSquadId}`)
@@ -152,7 +164,7 @@ export async function transferFighter(fighterId: string, newSquadId: string) {
     
     const { sendVkMessage } = await import('@/lib/vkBot')
     const senderName = session.role === 'DEVELOPER' ? 'KiritoNagibator' : session.fullName || 'Руководитель'
-    const msg = `${senderName} переводит бойца ${fighter.fullName} в отряд ${newSquadResult[0]?.name}`
+    const msg = `${senderName} переводит бойца ${fighter.fullName} в отряд ${newSquad?.name}`
 
     for (const u of oldCmds as any[]) {
       await sendVkMessage(u.vkLink, msg)
