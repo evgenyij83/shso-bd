@@ -63,7 +63,28 @@ export default function EventsListClient({ events, canCreate, role }: { events: 
                   Подробнее
                 </Link>
                 {canDelete && (
-                  <button onClick={() => handleDelete(ev.id)} className="btn-secondary" style={{ padding: '0.5rem 0.75rem', color: 'var(--danger-color)' }}>
+                  <button 
+                    onClick={() => handleDelete(ev.id)} 
+                    style={{ 
+                      padding: '0.5rem 0.75rem', 
+                      background: 'rgba(239, 68, 68, 0.1)', 
+                      border: '1px solid rgba(239, 68, 68, 0.2)', 
+                      color: '#ef4444', 
+                      borderRadius: '8px', 
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      transition: 'all 0.2s'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)'
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'
+                    }}
+                    title="Удалить мероприятие"
+                  >
                     <Trash2 size={18} />
                   </button>
                 )}

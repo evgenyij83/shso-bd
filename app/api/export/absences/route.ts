@@ -75,11 +75,13 @@ export async function GET(request: NextRequest) {
     for (const [_, fighterData] of Array.from(fightersMap.entries())) {
       const datesParagraphs = fighterData.dates.flatMap((entry, i) => {
         const dayFromStr = String(entry.dayFrom).padStart(2, '0')
+        const monthFromStr = String(entry.monthFrom || list.month).padStart(2, '0')
         const dayToStr = String(entry.dayTo).padStart(2, '0')
+        const monthToStr = String(entry.monthTo || list.month).padStart(2, '0')
         
         return [
-          new Paragraph({ children: [new TextRun({ text: `с ${entry.timeFrom} ${dayFromStr}.${monthStr}.${yearStr}`, size: 24 })], alignment: AlignmentType.CENTER }),
-          new Paragraph({ children: [new TextRun({ text: `по ${entry.timeTo} ${dayToStr}.${monthStr}.${yearStr};`, size: 24 })], alignment: AlignmentType.CENTER })
+          new Paragraph({ children: [new TextRun({ text: `с ${entry.timeFrom} ${dayFromStr}.${monthFromStr}.${yearStr}`, size: 24 })], alignment: AlignmentType.CENTER }),
+          new Paragraph({ children: [new TextRun({ text: `по ${entry.timeTo} ${dayToStr}.${monthToStr}.${yearStr};`, size: 24 })], alignment: AlignmentType.CENTER })
         ]
       })
 

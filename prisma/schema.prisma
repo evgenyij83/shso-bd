@@ -164,8 +164,10 @@ model AbsenceEntry {
   fighterName   String
   timeFrom      String
   dayFrom       Int
+  monthFrom     Int?
   timeTo        String
   dayTo         Int
+  monthTo       Int?
 }
 
 model Event {

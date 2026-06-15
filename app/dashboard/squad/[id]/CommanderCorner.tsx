@@ -47,9 +47,9 @@ export default function CommanderCorner({ squadId, fighters, userRole }: { squad
   // New entry form state
   const [newEntryFighter, setNewEntryFighter] = useState('')
   const [newTimeFrom, setNewTimeFrom] = useState('')
-  const [newDayFrom, setNewDayFrom] = useState(0)
+  const [newDateFrom, setNewDateFrom] = useState('')
   const [newTimeTo, setNewTimeTo] = useState('')
-  const [newDayTo, setNewDayTo] = useState(0)
+  const [newDateTo, setNewDateTo] = useState('')
 
   useEffect(() => { setMounted(true) }, [])
 
@@ -128,17 +128,21 @@ export default function CommanderCorner({ squadId, fighters, userRole }: { squad
   async function handleAddEntry() {
     if (!absenceDraft) return
     if (!newEntryFighter) { setAbsError('Выберите бойца'); return }
-    if (!newTimeFrom || newTimeFrom.length !== 5) { setAbsError('Укажите время «С» в формате ЧЧ:ММ'); return }
-    if (!newDayFrom) { setAbsError('Выберите день «С»'); return }
-    if (!newTimeTo || newTimeTo.length !== 5) { setAbsError('Укажите время «По» в формате ЧЧ:ММ'); return }
-    if (!newDayTo) { setAbsError('Выберите день «По»'); return }
+    if (!newTimeFrom) { setAbsError('Укажите время «С»'); return }
+    if (!newDateFrom) { setAbsError('Выберите дату «С»'); return }
+    if (!newTimeTo) { setAbsError('Укажите время «По»'); return }
+    if (!newDateTo) { setAbsError('Выберите дату «По»'); return }
+    
+    const [yearF, monthF, dayF] = newDateFrom.split('-').map(Number)
+    const [yearT, monthT, dayT] = newDateTo.split('-').map(Number)
+
     const fighter = fighters.find(f => f.id === newEntryFighter)
     if (!fighter) return
     setAbsLoading(true); setAbsError('')
-    const res = await addAbsenceEntry(absenceDraft.id, newEntryFighter, fighter.fullName, newTimeFrom, newDayFrom, newTimeTo, newDayTo)
+    const res = await addAbsenceEntry(absenceDraft.id, newEntryFighter, fighter.fullName, newTimeFrom, dayF, monthF, newTimeTo, dayT, monthT)
     if (res.error) setAbsError(res.error)
     else {
-      setNewTimeFrom(''); setNewDayFrom(0); setNewTimeTo(''); setNewDayTo(0)
+      setNewTimeFrom(''); setNewDateFrom(''); setNewTimeTo(''); setNewDateTo('')
       await loadDraft()
     }
     setAbsLoading(false)
@@ -323,8 +327,8 @@ export default function CommanderCorner({ squadId, fighters, userRole }: { squad
                               {(absenceDraft.entries as any[]).map((e: any) => (
                                 <tr key={e.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                                   <td style={{ padding: '8px', color: 'var(--text-primary)' }}>{e.fighterName}</td>
-                                  <td style={{ padding: '8px', textAlign: 'center', color: 'var(--text-primary)' }}>{String(e.dayFrom).padStart(2,'0')}.{String(absenceDraft.month).padStart(2,'0')} {e.timeFrom}</td>
-                                  <td style={{ padding: '8px', textAlign: 'center', color: 'var(--text-primary)' }}>{String(e.dayTo).padStart(2,'0')}.{String(absenceDraft.month).padStart(2,'0')} {e.timeTo}</td>
+                                  <td style={{ padding: '8px', textAlign: 'center', color: 'var(--text-primary)' }}>{String(e.dayFrom).padStart(2,'0')}.{String(e.monthFrom || absenceDraft.month).padStart(2,'0')} {e.timeFrom}</td>
+                                  <td style={{ padding: '8px', textAlign: 'center', color: 'var(--text-primary)' }}>{String(e.dayTo).padStart(2,'0')}.{String(e.monthTo || absenceDraft.month).padStart(2,'0')} {e.timeTo}</td>
                                   <td style={{ padding: '8px' }}>
                                     <button onClick={() => handleRemoveEntry(e.id)} style={{ background: 'rgba(239,68,68,0.2)', border: 'none', borderRadius: '4px', color: '#ef4444', cursor: 'pointer', padding: '4px' }}>
                                       <Trash2 size={12} />
@@ -347,25 +351,19 @@ export default function CommanderCorner({ squadId, fighters, userRole }: { squad
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginBottom: '0.5rem' }}>
                           <div>
                             <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>С — Время:</label>
-                            <input value={newTimeFrom} onChange={e => setNewTimeFrom(formatTimeInput(e.target.value))} placeholder="ЧЧ:ММ" className="input-field" maxLength={5} />
+                            <input type="time" value={newTimeFrom} onChange={e => setNewTimeFrom(e.target.value)} className="input-field" />
                           </div>
                           <div>
-                            <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>С — День:</label>
-                            <select value={newDayFrom} onChange={e => setNewDayFrom(Number(e.target.value))} className="input-field">
-                              <option value={0}>-- День --</option>
-                              {Array.from({ length: maxDays }, (_, i) => i + 1).map(d => <option key={d} value={d}>{d}</option>)}
-                            </select>
+                            <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>С — Дата:</label>
+                            <input type="date" value={newDateFrom} onChange={e => setNewDateFrom(e.target.value)} className="input-field" />
                           </div>
                           <div>
                             <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>По — Время:</label>
-                            <input value={newTimeTo} onChange={e => setNewTimeTo(formatTimeInput(e.target.value))} placeholder="ЧЧ:ММ" className="input-field" maxLength={5} />
+                            <input type="time" value={newTimeTo} onChange={e => setNewTimeTo(e.target.value)} className="input-field" />
                           </div>
                           <div>
-                            <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>По — День:</label>
-                            <select value={newDayTo} onChange={e => setNewDayTo(Number(e.target.value))} className="input-field">
-                              <option value={0}>-- День --</option>
-                              {Array.from({ length: maxDays }, (_, i) => i + 1).map(d => <option key={d} value={d}>{d}</option>)}
-                            </select>
+                            <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>По — Дата:</label>
+                            <input type="date" value={newDateTo} onChange={e => setNewDateTo(e.target.value)} className="input-field" />
                           </div>
                         </div>
                         <button onClick={handleAddEntry} disabled={absLoading} style={{ width: '100%', padding: '8px', background: 'rgba(59,130,246,0.2)', color: '#3b82f6', border: '1px solid rgba(59,130,246,0.3)', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '0.85rem' }}>

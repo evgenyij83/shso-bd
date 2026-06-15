@@ -61,7 +61,7 @@ export async function createDraftAbsenceList(squadId: string, month: number, yea
   }
 }
 
-export async function addAbsenceEntry(listId: string, fighterId: string, fighterName: string, timeFrom: string, dayFrom: number, timeTo: string, dayTo: number) {
+export async function addAbsenceEntry(listId: string, fighterId: string, fighterName: string, timeFrom: string, dayFrom: number, monthFrom: number, timeTo: string, dayTo: number, monthTo: number) {
   const session = await getSession()
   if (!session) return { error: 'Необходима авторизация' }
 
@@ -70,8 +70,8 @@ export async function addAbsenceEntry(listId: string, fighterId: string, fighter
 
   try {
     await sql`
-      INSERT INTO "AbsenceEntry" (id, "absenceListId", "fighterId", "fighterName", "timeFrom", "dayFrom", "timeTo", "dayTo")
-      VALUES (gen_random_uuid(), ${listId}, ${fighterId}, ${fighterName}, ${timeFrom}, ${dayFrom}, ${timeTo}, ${dayTo})
+      INSERT INTO "AbsenceEntry" (id, "absenceListId", "fighterId", "fighterName", "timeFrom", "dayFrom", "monthFrom", "timeTo", "dayTo", "monthTo")
+      VALUES (gen_random_uuid(), ${listId}, ${fighterId}, ${fighterName}, ${timeFrom}, ${dayFrom}, ${monthFrom}, ${timeTo}, ${dayTo}, ${monthTo})
     `
     return { success: true }
   } catch (e) {
@@ -148,9 +148,11 @@ export async function submitAbsenceList(listId: string, targetAdminUserId: strin
     for (const [fighterId, fEntries] of Object.entries(fighterEntries)) {
       const fighter = await sql`SELECT "vkLink" FROM "Fighter" WHERE id = ${fighterId}`
       if (fighter[0]?.vkLink) {
-        const dateLines = fEntries.map((e: any) =>
-          `${e.dayFrom}.${String(list.month).padStart(2,'0')}.${list.year} ${e.timeFrom} – ${e.dayTo}.${String(list.month).padStart(2,'0')}.${list.year} ${e.timeTo}`
-        ).join('\n')
+        const dateLines = fEntries.map((e: any) => {
+          const mFrom = String(e.monthFrom || list.month).padStart(2, '0')
+          const mTo = String(e.monthTo || list.month).padStart(2, '0')
+          return `${String(e.dayFrom).padStart(2, '0')}.${mFrom}.${list.year} ${e.timeFrom} – ${String(e.dayTo).padStart(2, '0')}.${mTo}.${list.year} ${e.timeTo}`
+        }).join('\n')
         await sendVkMessage(fighter[0].vkLink, `${roleName} отряда направил на согласование:\n\n${dateLines}`)
       }
     }
@@ -199,10 +201,33 @@ export async function clearAbsenceHistory() {
   if (!session || session.role !== 'UNIVERSITY_ADMIN') return { error: 'Недостаточно прав' }
 
   try {
-    await sql`UPDATE "AbsenceList" SET status = 'ARCHIVED' WHERE status = 'SENT' AND "targetAdminUserId" = ${session.userId}`
+    await sql`DELETE FROM "AbsenceList" WHERE status IN ('SENT', 'DOWNLOADED') AND "targetAdminUserId" = ${session.userId}`
     return { success: true }
   } catch (e) {
-    console.error(e)
     return { error: 'Ошибка при очистке истории' }
+  }
+}
+
+export async function markAbsenceListDownloaded(listId: string) {
+  const session = await getSession()
+  if (!session || session.role !== 'UNIVERSITY_ADMIN') return { error: 'Недостаточно прав' }
+
+  try {
+    await sql`UPDATE "AbsenceList" SET status = 'DOWNLOADED' WHERE id = ${listId} AND "targetAdminUserId" = ${session.userId}`
+    return { success: true }
+  } catch (e) {
+    return { error: 'Ошибка при обновлении статуса' }
+  }
+}
+
+export async function deleteAbsenceList(listId: string) {
+  const session = await getSession()
+  if (!session || session.role !== 'UNIVERSITY_ADMIN') return { error: 'Недостаточно прав' }
+
+  try {
+    await sql`DELETE FROM "AbsenceList" WHERE id = ${listId} AND "targetAdminUserId" = ${session.userId}`
+    return { success: true }
+  } catch (e) {
+    return { error: 'Ошибка при удалении' }
   }
 }

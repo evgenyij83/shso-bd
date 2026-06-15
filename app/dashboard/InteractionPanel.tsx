@@ -7,7 +7,7 @@ import { MessageSquare, UserPlus, Send, X, Check, ChevronDown, Award, Calendar, 
 import { submitAccountRequest } from '@/app/actions/accountRequests'
 import { getAvailableRecipients, sendBulkMessage } from '@/app/actions/messaging'
 import { getPendingAwardNominations, approveByHQ, approveByUniversity, getUniversityAdmins } from '@/app/actions/awards'
-import { getPendingAbsenceLists, clearAbsenceHistory } from '@/app/actions/absences'
+import { getPendingAbsenceLists, clearAbsenceHistory, markAbsenceListDownloaded, deleteAbsenceList } from '@/app/actions/absences'
 
 type Squad = { id: string, name: string }
 type Recipient = { id: string, fullName: string, role: string, squadName: string | null, hasVk: boolean }
@@ -92,6 +92,21 @@ export default function InteractionPanel({ squads, hasVkLink, userRole, pendingA
       router.refresh()
     }
     setClearAbsencesLoading(false)
+  }
+
+  async function handleDownloadAbsence(listId: string) {
+    window.open(`/api/export/absences?listId=${listId}`, '_blank')
+    await markAbsenceListDownloaded(listId)
+    // Обновим локальный список или просто страницу, чтобы ушло уведомление
+    setAbsenceLists(prev => prev.filter(l => l.id !== listId))
+    router.refresh()
+  }
+
+  async function handleDeleteAbsenceList(listId: string) {
+    if (!confirm('Удалить эту форму?')) return
+    await deleteAbsenceList(listId)
+    setAbsenceLists(prev => prev.filter(l => l.id !== listId))
+    router.refresh()
   }
 
   async function loadAwards() {
@@ -509,9 +524,14 @@ export default function InteractionPanel({ squads, hasVkLink, userRole, pendingA
                               {senderRole} {list.senderName} — {monthNames[(list.month as number) - 1]} {list.year}
                             </div>
                           </div>
-                          <a href={`/api/export/absences?listId=${list.id}`} target="_blank" style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', background: 'rgba(59,130,246,0.2)', color: '#3b82f6', border: '1px solid rgba(59,130,246,0.3)', borderRadius: '8px', textDecoration: 'none', fontSize: '0.85rem', cursor: 'pointer' }}>
-                            <Download size={14} /> Скачать Word
-                          </a>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <button onClick={() => handleDownloadAbsence(list.id)} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', background: 'rgba(59,130,246,0.2)', color: '#3b82f6', border: '1px solid rgba(59,130,246,0.3)', borderRadius: '8px', cursor: 'pointer', fontSize: '0.85rem' }}>
+                              <Download size={14} /> Скачать Word
+                            </button>
+                            <button onClick={() => handleDeleteAbsenceList(list.id)} style={{ padding: '8px', background: 'rgba(239,68,68,0.2)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '8px', color: '#ef4444', cursor: 'pointer' }} title="Удалить форму">
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
                         </div>
                       </div>
                     )
