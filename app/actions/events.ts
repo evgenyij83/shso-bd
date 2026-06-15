@@ -21,7 +21,7 @@ export async function createEvent(formData: FormData) {
   try {
     const res = await sql`
       INSERT INTO "Event" (id, title, description, requirements, "chatLink", "createdById", "createdAt")
-      VALUES (${Math.random().toString(36).substring(2, 15)}, ${title}, ${description}, ${requirements}, ${chatLink || null}, ${session.id}, NOW())
+      VALUES (${Math.random().toString(36).substring(2, 15)}, ${title}, ${description}, ${requirements}, ${chatLink || null}, ${session.userId}, NOW())
       RETURNING *
     `
 
