@@ -31,18 +31,14 @@ export default async function EventPage(props: { params: Promise<{ id: string }>
 
   // Если юзер — командир/комиссар, нужно дать возможность выбрать бойцов
   let fighters: any[] = []
-  let hasSubmitted = false
   const canSubmit = (session.role === 'SQUAD_COMMANDER' || session.role === 'SQUAD_COMMISSAR') && session.squadId
 
   if (canSubmit) {
     const sqId = session.squadId as string
-    const existing = await sql`SELECT id FROM "EventSubmission" WHERE "eventId" = ${params.id} AND "squadId" = ${sqId}`
-    if (existing.length > 0) {
-      hasSubmitted = true
-    } else {
-      fighters = await sql`SELECT id, "fullName", position FROM "Fighter" WHERE "squadId" = ${sqId} ORDER BY "fullName" ASC` as any[]
-    }
+    fighters = await sql`SELECT id, "fullName", position FROM "Fighter" WHERE "squadId" = ${sqId} ORDER BY "fullName" ASC` as any[]
   }
+
+  const isCreatorOrDev = session.role === 'DEVELOPER' || event.createdById === session.userId
 
   return (
     <div style={{ maxWidth: '1000px', margin: '0 auto', padding: '1rem' }}>
@@ -51,11 +47,20 @@ export default async function EventPage(props: { params: Promise<{ id: string }>
       </Link>
 
       <div className="glass-panel" style={{ padding: '2rem', marginBottom: '2rem' }}>
-        <h1 style={{ margin: '0 0 1rem 0', fontSize: '2rem', color: 'var(--accent-color)' }}>{event.title}</h1>
-        <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>
-          Создано: {event.authorName} • {new Date(event.createdAt).toLocaleDateString('ru-RU')}
-          {event.maxParticipants !== null && ` • Лимит: ${event.maxParticipants} чел.`}
-        </p>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <div>
+            <h1 style={{ margin: '0 0 1rem 0', fontSize: '2rem', color: 'var(--accent-color)' }}>{event.title}</h1>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>
+              Создано: {event.authorName} • {new Date(event.createdAt).toLocaleDateString('ru-RU')}
+              {event.maxParticipants !== null && ` • Лимит: ${event.maxParticipants} чел.`}
+            </p>
+          </div>
+          {event.status === 'APPROVED' && (
+            <div style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#10b981', padding: '0.5rem 1rem', borderRadius: '8px', fontWeight: 'bold' }}>
+              Списки утверждены
+            </div>
+          )}
+        </div>
 
         <div style={{ marginBottom: '1.5rem' }}>
           <h3 style={{ color: 'var(--text-primary)', marginBottom: '0.5rem' }}>Описание</h3>
@@ -78,36 +83,24 @@ export default async function EventPage(props: { params: Promise<{ id: string }>
           <EventDetailsClient 
             eventId={event.id} 
             fighters={fighters} 
-            hasSubmitted={hasSubmitted} 
+            status={event.status}
             maxParticipants={event.maxParticipants}
             currentParticipantsCount={participants.length}
+            participants={participants}
+            isCreatorOrDev={isCreatorOrDev}
           />
         )}
-      </div>
 
-      <div className="glass-panel" style={{ padding: '2rem' }}>
-        <h2 style={{ margin: '0 0 1.5rem 0' }}>Участники ({participants.length})</h2>
-        {participants.length === 0 ? (
-          <p style={{ color: 'var(--text-secondary)' }}>Пока никто не записан.</p>
-        ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-            <thead>
-              <tr style={{ borderBottom: '1px solid var(--glass-border)', background: 'rgba(0,0,0,0.2)' }}>
-                <th style={{ padding: '1rem' }}>ФИО</th>
-                <th style={{ padding: '1rem' }}>Отряд</th>
-                <th style={{ padding: '1rem' }}>Дата подачи</th>
-              </tr>
-            </thead>
-            <tbody>
-              {participants.map((p) => (
-                <tr key={p.id} style={{ borderBottom: '1px solid var(--glass-border)' }}>
-                  <td style={{ padding: '1rem' }}>{p.fighterName}</td>
-                  <td style={{ padding: '1rem', color: 'var(--text-secondary)' }}>{p.squadName}</td>
-                  <td style={{ padding: '1rem', color: 'var(--text-secondary)' }}>{new Date(p.createdAt).toLocaleDateString('ru-RU')}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        {!canSubmit && isCreatorOrDev && (
+           <EventDetailsClient 
+            eventId={event.id} 
+            fighters={[]} 
+            status={event.status}
+            maxParticipants={event.maxParticipants}
+            currentParticipantsCount={participants.length}
+            participants={participants}
+            isCreatorOrDev={isCreatorOrDev}
+          />
         )}
       </div>
     </div>

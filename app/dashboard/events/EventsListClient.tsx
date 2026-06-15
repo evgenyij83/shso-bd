@@ -3,15 +3,22 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
-import { Calendar, Plus } from 'lucide-react'
-import { createEvent } from '@/app/actions/events'
+import { Calendar, Plus, Trash2 } from 'lucide-react'
+import { createEvent, deleteEvent } from '@/app/actions/events'
 
 type EventType = { id: string, title: string, description: string, createdAt: Date }
 
-export default function EventsListClient({ events, canCreate }: { events: EventType[], canCreate: boolean }) {
+export default function EventsListClient({ events, canCreate, role }: { events: EventType[], canCreate: boolean, role: string }) {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+
+  const canDelete = role === 'UNIVERSITY_ADMIN' || role === 'HQ_COMMANDER' || role === 'DEVELOPER'
+
+  async function handleDelete(id: string) {
+    if (!confirm('Вы уверены, что хотите удалить это мероприятие?')) return
+    await deleteEvent(id)
+  }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -51,9 +58,16 @@ export default function EventsListClient({ events, canCreate }: { events: EventT
                   {ev.description.substring(0, 100)}{ev.description.length > 100 ? '...' : ''}
                 </p>
               </div>
-              <Link href={`/dashboard/events/${ev.id}`} className="btn-primary" style={{ textDecoration: 'none' }}>
-                Подробнее
-              </Link>
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <Link href={`/dashboard/events/${ev.id}`} className="btn-primary" style={{ textDecoration: 'none' }}>
+                  Подробнее
+                </Link>
+                {canDelete && (
+                  <button onClick={() => handleDelete(ev.id)} className="btn-secondary" style={{ padding: '0.5rem 0.75rem', color: 'var(--danger-color)' }}>
+                    <Trash2 size={18} />
+                  </button>
+                )}
+              </div>
             </motion.div>
           ))}
         </div>

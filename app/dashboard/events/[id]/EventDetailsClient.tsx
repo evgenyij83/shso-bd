@@ -1,39 +1,37 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Users, Check } from 'lucide-react'
-import { submitFightersToEvent } from '@/app/actions/events'
-import { useRouter } from 'next/navigation'
+import { Users, Trash2, CheckCircle } from 'lucide-react'
+import { submitFightersToEvent, removeFighterFromEvent, approveEvent } from '@/app/actions/events'
 
 type Fighter = { id: string, fullName: string, position: string }
+type Participant = { id: string, fighterName: string, squadName: string, createdAt: Date }
 
-export default function EventDetailsClient({ eventId, fighters, hasSubmitted, maxParticipants, currentParticipantsCount }: { eventId: string, fighters: Fighter[], hasSubmitted: boolean, maxParticipants: number | null, currentParticipantsCount: number }) {
+export default function EventDetailsClient({ 
+  eventId, 
+  fighters, 
+  status, 
+  maxParticipants, 
+  currentParticipantsCount,
+  participants,
+  isCreatorOrDev
+}: { 
+  eventId: string, 
+  fighters: Fighter[], 
+  status: string, 
+  maxParticipants: number | null, 
+  currentParticipantsCount: number,
+  participants: Participant[],
+  isCreatorOrDev: boolean
+}) {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const router = useRouter()
-
-  // Автоматическое обновление данных на странице, чтобы видеть актуальное количество мест
-  useEffect(() => {
-    if (!isModalOpen) return
-    const interval = setInterval(() => {
-      router.refresh()
-    }, 5000)
-    return () => clearInterval(interval)
-  }, [isModalOpen, router])
-
-  if (hasSubmitted) {
-    return (
-      <div style={{ marginTop: '2rem', padding: '1rem', background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.3)', borderRadius: '8px', color: '#10b981', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-        <Check size={20} />
-        Ваш отряд уже подал заявку на это мероприятие.
-      </div>
-    )
-  }
 
   const remainingSpots = maxParticipants !== null ? Math.max(0, maxParticipants - currentParticipantsCount) : null
+  const isOpen = status === 'OPEN'
 
   const toggleFighter = (id: string) => {
     const next = new Set(selectedIds)
@@ -61,8 +59,6 @@ export default function EventDetailsClient({ eventId, fighters, hasSubmitted, ma
       return
     }
 
-    if (!confirm('Вы уверены? После подачи заявки вы не сможете изменить список участников от вашего отряда.')) return
-
     setLoading(true)
     setError('')
     
@@ -73,15 +69,77 @@ export default function EventDetailsClient({ eventId, fighters, hasSubmitted, ma
       setLoading(false)
     } else {
       setIsModalOpen(false)
-      // reloading will happen via revalidatePath
+      setLoading(false)
+      setSelectedIds(new Set())
     }
   }
 
+  async function handleRemove(participantId: string) {
+    if (!confirm('Удалить бойца из списка участников?')) return
+    await removeFighterFromEvent(eventId, participantId)
+  }
+
+  async function handleApprove() {
+    if (!confirm('Вы уверены? После утверждения списка прием заявок закроется, и всем участникам будет разослано сообщение в ВК со ссылкой на чат.')) return
+    setLoading(true)
+    const res = await approveEvent(eventId)
+    if (res.error) {
+      alert(res.error)
+    }
+    setLoading(false)
+  }
+
   return (
-    <div style={{ marginTop: '2rem' }}>
-      <button onClick={() => setIsModalOpen(true)} className="btn-primary" disabled={remainingSpots === 0}>
-        <Users size={18} /> {remainingSpots === 0 ? 'Мест нет' : 'Предоставить бойцов'}
-      </button>
+    <>
+      <div style={{ marginTop: '2rem', display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+        {fighters.length > 0 && isOpen && (
+          <button onClick={() => setIsModalOpen(true)} className="btn-primary" disabled={remainingSpots === 0}>
+            <Users size={18} /> {remainingSpots === 0 ? 'Мест нет' : 'Предоставить бойцов'}
+          </button>
+        )}
+
+        {isCreatorOrDev && isOpen && participants.length > 0 && (
+          <button onClick={handleApprove} className="btn-primary" disabled={loading} style={{ background: '#10b981' }}>
+            <CheckCircle size={18} /> {loading ? 'Утверждаем...' : 'Утвердить список и разослать приглашения'}
+          </button>
+        )}
+      </div>
+
+      <div style={{ marginTop: '3rem' }}>
+        <h2 style={{ margin: '0 0 1.5rem 0' }}>Участники ({participants.length})</h2>
+        {participants.length === 0 ? (
+          <p style={{ color: 'var(--text-secondary)' }}>Пока никто не записан.</p>
+        ) : (
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid var(--glass-border)', background: 'rgba(0,0,0,0.2)' }}>
+                  <th style={{ padding: '1rem' }}>ФИО</th>
+                  <th style={{ padding: '1rem' }}>Отряд</th>
+                  <th style={{ padding: '1rem' }}>Дата подачи</th>
+                  {isCreatorOrDev && isOpen && <th style={{ padding: '1rem', width: '50px' }}></th>}
+                </tr>
+              </thead>
+              <tbody>
+                {participants.map((p) => (
+                  <tr key={p.id} style={{ borderBottom: '1px solid var(--glass-border)' }}>
+                    <td style={{ padding: '1rem' }}>{p.fighterName}</td>
+                    <td style={{ padding: '1rem', color: 'var(--text-secondary)' }}>{p.squadName}</td>
+                    <td style={{ padding: '1rem', color: 'var(--text-secondary)' }}>{new Date(p.createdAt).toLocaleDateString('ru-RU')}</td>
+                    {isCreatorOrDev && isOpen && (
+                      <td style={{ padding: '1rem' }}>
+                        <button onClick={() => handleRemove(p.id)} style={{ background: 'none', border: 'none', color: 'var(--danger-color)', cursor: 'pointer', padding: '0.5rem' }} title="Удалить">
+                          <Trash2 size={18} />
+                        </button>
+                      </td>
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
 
       <AnimatePresence>
         {isModalOpen && (
@@ -113,7 +171,7 @@ export default function EventDetailsClient({ eventId, fighters, hasSubmitted, ma
                     </div>
                   </label>
                 ))}
-                {fighters.length === 0 && <p style={{ color: 'var(--text-secondary)' }}>В вашем отряде пока нет бойцов.</p>}
+                {fighters.length === 0 && <p style={{ color: 'var(--text-secondary)' }}>В вашем отряде пока нет бойцов (или все уже добавлены).</p>}
               </div>
 
               {error && <p style={{ color: 'var(--danger-color)', fontSize: '0.9rem', margin: '0 0 1rem 0' }}>{error}</p>}
@@ -130,6 +188,6 @@ export default function EventDetailsClient({ eventId, fighters, hasSubmitted, ma
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </>
   )
 }

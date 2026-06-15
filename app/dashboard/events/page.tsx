@@ -8,7 +8,7 @@ export default async function EventsPage() {
   const session = await getSession()
   if (!session) redirect('/')
 
-  const events = await sql`SELECT id, title, description, "createdAt" FROM "Event" ORDER BY "createdAt" DESC` as any[]
+  const events = await sql`SELECT id, title, description, "createdAt", "maxParticipants", status FROM "Event" ORDER BY "createdAt" DESC` as any[]
 
   const canCreate = session.role === 'DEVELOPER' || session.role === 'UNIVERSITY_ADMIN' || session.role === 'HQ_COMMANDER'
 
@@ -18,7 +18,7 @@ export default async function EventsPage() {
         <h1 style={{ fontSize: '2rem', margin: 0, textShadow: '0 0 20px rgba(255,255,255,0.1)' }}>Мероприятия</h1>
       </div>
 
-      <EventsListClient events={events} canCreate={canCreate} />
+      <EventsListClient events={events} canCreate={canCreate} role={session.role} />
     </div>
   )
 }
