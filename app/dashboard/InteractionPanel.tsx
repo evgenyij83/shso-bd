@@ -2,11 +2,11 @@
 
 import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
-import { MessageSquare, UserPlus, Send, X, Check, ChevronDown, Award, Calendar, Download } from 'lucide-react'
+import { MessageSquare, UserPlus, Send, X, Check, ChevronDown, Award, Calendar, Download, Trash2 } from 'lucide-react'
 import { submitAccountRequest } from '@/app/actions/accountRequests'
 import { getAvailableRecipients, sendBulkMessage } from '@/app/actions/messaging'
 import { getPendingAwardNominations, approveByHQ, approveByUniversity, getUniversityAdmins } from '@/app/actions/awards'
-import { getPendingAbsenceLists } from '@/app/actions/absences'
+import { getPendingAbsenceLists, clearAbsenceHistory } from '@/app/actions/absences'
 
 type Squad = { id: string, name: string }
 type Recipient = { id: string, fullName: string, role: string, squadName: string | null, hasVk: boolean }
@@ -47,6 +47,7 @@ export default function InteractionPanel({ squads, hasVkLink, userRole, pendingA
   // Absences state (University only)
   const [absenceLists, setAbsenceLists] = useState<any[]>([])
   const [absencesLoaded, setAbsencesLoaded] = useState(false)
+  const [clearAbsencesLoading, setClearAbsencesLoading] = useState(false)
 
   const showAwardsTab = isHQRole || userRole === 'UNIVERSITY_ADMIN'
   const showAbsencesTab = userRole === 'UNIVERSITY_ADMIN'
@@ -78,6 +79,16 @@ export default function InteractionPanel({ squads, hasVkLink, userRole, pendingA
     const data = await getPendingAbsenceLists()
     setAbsenceLists(data as any[])
     setAbsencesLoaded(true)
+  }
+
+  async function handleClearAbsenceHistory() {
+    if (!confirm('Вы уверены, что хотите очистить историю пропусков?')) return
+    setClearAbsencesLoading(true)
+    const res = await clearAbsenceHistory()
+    if (!res.error) {
+      setAbsenceLists([])
+    }
+    setClearAbsencesLoading(false)
   }
 
   async function loadAwards() {
@@ -473,7 +484,14 @@ export default function InteractionPanel({ squads, hasVkLink, userRole, pendingA
               {/* Tab: Absences (University only) */}
               {activeTab === 'absences' && (
                 <div>
-                  <h4 style={{ color: '#3b82f6', fontSize: '0.9rem', marginBottom: '1rem' }}>Полученные списки пропусков</h4>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                    <h4 style={{ color: '#3b82f6', fontSize: '0.9rem', margin: 0 }}>Полученные списки пропусков</h4>
+                    {absenceLists.length > 0 && (
+                      <button onClick={handleClearAbsenceHistory} disabled={clearAbsencesLoading} style={{ background: 'rgba(239, 68, 68, 0.2)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.3)', padding: '6px 12px', borderRadius: '8px', cursor: 'pointer', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '6px', transition: 'all 0.2s' }}>
+                        <Trash2 size={14} /> {clearAbsencesLoading ? 'Очистка...' : 'Очистить историю'}
+                      </button>
+                    )}
+                  </div>
                   {!absencesLoaded && <div style={{ color: 'var(--text-secondary)' }}>Загрузка...</div>}
                   {absencesLoaded && absenceLists.length === 0 && <div style={{ color: 'var(--text-secondary)', textAlign: 'center', padding: '2rem' }}>Нет новых списков</div>}
                   {absenceLists.map((list: any) => {

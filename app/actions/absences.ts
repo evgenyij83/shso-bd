@@ -193,3 +193,16 @@ export async function getUniversityAdminsForAbsences() {
     return []
   }
 }
+
+export async function clearAbsenceHistory() {
+  const session = await getSession()
+  if (!session || session.role !== 'UNIVERSITY_ADMIN') return { error: 'Недостаточно прав' }
+
+  try {
+    await sql`UPDATE "AbsenceList" SET status = 'ARCHIVED' WHERE status = 'SENT' AND "targetAdminUserId" = ${session.userId}`
+    return { success: true }
+  } catch (e) {
+    console.error(e)
+    return { error: 'Ошибка при очистке истории' }
+  }
+}
