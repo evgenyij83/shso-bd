@@ -60,7 +60,7 @@ export async function submitPracticeRequest(formData: FormData) {
       WHERE role = 'UNIVERSITY_ADMIN' AND "vkLink" IS NOT NULL
     `
 
-    const msg = `Обучающийся ${fullName} направил заявку на прохождение ${practiceType} практики в ${squadName}.`
+    const msg = `Обучающийся ${fullName} направил заявку на прохождение практики ${practiceType} в ${squadName}`
     const allLinks = [...squadAdmins, ...uniAdmins].map((u: any) => u.vkLink).filter(Boolean)
 
     for (const link of allLinks) {
@@ -135,7 +135,7 @@ export async function processPracticeRequest(requestId: string, isApproved: bool
 
   try {
     const reqs = await sql`
-      SELECT pr.*, s.name as "squadName" 
+      SELECT pr.*, s.name as "squadName", s."chatLink"
       FROM "PracticeRequest" pr
       JOIN "Squad" s ON pr."squadId" = s.id
       WHERE pr.id = ${requestId}
@@ -152,11 +152,27 @@ export async function processPracticeRequest(requestId: string, isApproved: bool
       WHERE id = ${requestId}
     `
 
+    if (isApproved) {
+      // Добавляем бойца в отряд
+      await sql`
+        INSERT INTO "Fighter" (id, "squadId", position, "fullName", faculty, "studyGroup", course, "educationForm", phone, "vkLink")
+        VALUES (
+          gen_random_uuid(), ${req.squadId}, 'Боец', ${req.fullName || 'Не указано'}, 
+          ${req.faculty || 'Не указано'}, ${req.studyGroup || 'Не указано'}, 
+          ${req.course || 0}, 'Не указано', ${req.phone || 'Не указано'}, ${req.vkLink || null}
+        )
+      `
+    }
+
     if (req.vkLink) {
       if (isApproved) {
-        await sendVkMessage(req.vkLink, `Ваша заявка на прохождение ${req.practiceType} практики в ${req.squadName} одобрена. Обработал: ${processorName}.`)
+        let msg = `Ваша заявка на прохождение практики ${req.practiceType} в ${req.squadName} одобрена.`
+        if (req.chatLink) {
+          msg += `\nСсылка на общий чат отряда: ${req.chatLink}`
+        }
+        await sendVkMessage(req.vkLink, msg)
       } else {
-        await sendVkMessage(req.vkLink, `Ваша заявка на прохождение ${req.practiceType} практики в ${req.squadName} Отклонена. Причина: ${rejectReason || 'не указана'}. Обработал: ${processorName}.`)
+        await sendVkMessage(req.vkLink, `Ваша заявка на прохождение практики ${req.practiceType} в ${req.squadName} Отклонена. Причина: ${rejectReason || 'не указана'}. Обработал(а): ${processorName}.`)
       }
     }
 
