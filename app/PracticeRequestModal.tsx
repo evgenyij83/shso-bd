@@ -27,7 +27,7 @@ export default function PracticeRequestModal({ isOpen, onClose, squads }: { isOp
     if (res.error) {
       setError(res.error)
     } else {
-      setSuccess('Успешно! Теперь обязательно напишите в сообщения сообщества отряда в ВК, чтобы с вами связались!')
+      setSuccess('Успешно! Для получения обратной связи начните диалог с сообществом https://vk.com/club239553821')
       ;(e.target as HTMLFormElement).reset()
     }
     setLoading(false)
@@ -49,7 +49,7 @@ export default function PracticeRequestModal({ isOpen, onClose, squads }: { isOp
               </div>
               <h3 style={{ color: '#fff', marginBottom: '1rem' }}>Заявка отправлена</h3>
               <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: 1.5 }}>
-                {success}
+                Успешно! Для получения обратной связи начните диалог с сообществом <br/><a href="https://vk.com/club239553821" target="_blank" style={{ color: '#3b82f6', textDecoration: 'underline' }}>https://vk.com/club239553821</a>
               </p>
               <button onClick={onClose} className="btn-primary" style={{ marginTop: '1.5rem', width: '100%' }}>Понятно</button>
             </div>
