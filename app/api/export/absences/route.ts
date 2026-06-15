@@ -74,13 +74,12 @@ export async function GET(request: NextRequest) {
 
     for (const [_, fighterData] of Array.from(fightersMap.entries())) {
       const datesParagraphs = fighterData.dates.flatMap((entry, i) => {
-        const isLast = i === fighterData.dates.length - 1
         const dayFromStr = String(entry.dayFrom).padStart(2, '0')
         const dayToStr = String(entry.dayTo).padStart(2, '0')
         
         return [
           new Paragraph({ children: [new TextRun({ text: `с ${entry.timeFrom} ${dayFromStr}.${monthStr}.${yearStr}`, size: 24 })], alignment: AlignmentType.CENTER }),
-          new Paragraph({ children: [new TextRun({ text: `по ${entry.timeTo} ${dayToStr}.${monthStr}.${yearStr}${isLast ? '' : ';'}`, size: 24 })], alignment: AlignmentType.CENTER })
+          new Paragraph({ children: [new TextRun({ text: `по ${entry.timeTo} ${dayToStr}.${monthStr}.${yearStr};`, size: 24 })], alignment: AlignmentType.CENTER })
         ]
       })
 
@@ -97,6 +96,13 @@ export async function GET(request: NextRequest) {
       index++
     }
 
+    const noBorders = {
+      top: { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' },
+      bottom: { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' },
+      left: { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' },
+      right: { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' }
+    }
+
     const doc = new Document({
       sections: [{
         properties: {
@@ -105,55 +111,39 @@ export async function GET(request: NextRequest) {
           }
         },
         children: [
-          new Paragraph({
-            children: [
-              new TextRun({ text: 'ФГБОУ ВО СГУПС\t\t\tДеканам факультетов', bold: true, size: 24 })
-            ],
-            alignment: AlignmentType.LEFT,
+          new Table({
+            width: { size: 100, type: WidthType.PERCENTAGE },
+            borders: noBorders,
+            rows: [
+              new TableRow({
+                children: [
+                  new TableCell({
+                    borders: noBorders,
+                    width: { size: 5000, type: WidthType.DXA },
+                    children: [
+                      new Paragraph({ children: [new TextRun({ text: 'ФГБОУ ВО СГУПС', bold: true, size: 24 })] }),
+                      new Paragraph({ children: [new TextRun({ text: 'Центр карьеры Управления по', size: 24 })] }),
+                      new Paragraph({ children: [new TextRun({ text: 'связям с производством', size: 24 })], spacing: { after: 200 } }),
+                      new Paragraph({ children: [new TextRun({ text: 'ДОКЛАДНАЯ ЗАПИСКА', bold: true, size: 24 })], alignment: AlignmentType.CENTER, spacing: { after: 200 } }),
+                      new Paragraph({ children: [new TextRun({ text: '№ ___________________', size: 24 })], spacing: { after: 200 } }),
+                      new Paragraph({ children: [new TextRun({ text: 'О пропуске занятий по', bold: true, size: 24 })] }),
+                      new Paragraph({ children: [new TextRun({ text: 'уважительной причине', bold: true, size: 24 })], spacing: { after: 200 } }),
+                    ]
+                  }),
+                  new TableCell({
+                    borders: noBorders,
+                    width: { size: 4000, type: WidthType.DXA },
+                    children: [
+                      new Paragraph({ children: [new TextRun({ text: 'Деканам факультетов', size: 24 })], alignment: AlignmentType.RIGHT })
+                    ]
+                  })
+                ]
+              })
+            ]
           }),
           new Paragraph({
             children: [
-              new TextRun({ text: 'Центр карьеры Управления по', size: 24 })
-            ],
-            alignment: AlignmentType.LEFT,
-          }),
-          new Paragraph({
-            children: [
-              new TextRun({ text: 'связям с производством', size: 24 })
-            ],
-            alignment: AlignmentType.LEFT,
-            spacing: { after: 200 }
-          }),
-          new Paragraph({
-            children: [
-              new TextRun({ text: 'ДОКЛАДНАЯ ЗАПИСКА', bold: true, size: 24 })
-            ],
-            alignment: AlignmentType.LEFT,
-            spacing: { after: 200 }
-          }),
-          new Paragraph({
-            children: [
-              new TextRun({ text: '№ ___________________', size: 24 })
-            ],
-            alignment: AlignmentType.LEFT,
-            spacing: { after: 200 }
-          }),
-          new Paragraph({
-            children: [
-              new TextRun({ text: 'О пропуске занятий по', bold: true, size: 24 })
-            ],
-            alignment: AlignmentType.LEFT,
-          }),
-          new Paragraph({
-            children: [
-              new TextRun({ text: 'уважительной причине', bold: true, size: 24 })
-            ],
-            alignment: AlignmentType.LEFT,
-            spacing: { after: 200 }
-          }),
-          new Paragraph({
-            children: [
-              new TextRun({ text: '\tВ связи с участием следующих обучающихся в студенческом отряде «Смена», прошу считать пропуск занятий в указанные даты по уважительной причине:', size: 24 })
+              new TextRun({ text: `\tВ связи с участием следующих обучающихся в студенческом отряде «${list.squadName}», прошу считать пропуск занятий в указанные даты по уважительной причине:`, size: 24 })
             ],
             alignment: AlignmentType.JUSTIFIED,
             spacing: { after: 200 }

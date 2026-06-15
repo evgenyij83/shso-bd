@@ -122,3 +122,47 @@ export async function editFighter(formData: FormData) {
   revalidatePath(`/dashboard/squad/${squadId}`)
   return { success: true }
 }
+
+export async function transferFighter(fighterId: string, newSquadId: string) {
+  const session = await getSession()
+  if (!session) return { error: 'Не авторизован' }
+  if (session.role !== 'HQ_COMMANDER' && session.role !== 'HQ_COMMISSAR' && session.role !== 'DEVELOPER') {
+    return { error: 'Недостаточно прав для перевода' }
+  }
+
+  try {
+    const fighterResult = await sql`SELECT "fullName", "squadId" FROM "Fighter" WHERE id = ${fighterId}`
+    if (fighterResult.length === 0) return { error: 'Боец не найден' }
+    const fighter = fighterResult[0] as any
+    const oldSquadId = fighter.squadId
+
+    if (oldSquadId === newSquadId) return { error: 'Боец уже в этом отряде' }
+
+    const oldSquadResult = await sql`SELECT name FROM "Squad" WHERE id = ${oldSquadId}`
+    const newSquadResult = await sql`SELECT name FROM "Squad" WHERE id = ${newSquadId}`
+    
+    await sql`UPDATE "Fighter" SET "squadId" = ${newSquadId} WHERE id = ${fighterId}`
+
+    revalidatePath(`/dashboard/squad/${oldSquadId}`)
+    revalidatePath(`/dashboard/squad/${newSquadId}`)
+
+    // Уведомление командирам старого и нового отрядов
+    const oldCmds = await sql`SELECT "vkLink" FROM "User" WHERE "squadId" = ${oldSquadId} AND role IN ('SQUAD_COMMANDER', 'SQUAD_COMMISSAR') AND "vkLink" IS NOT NULL`
+    const newCmds = await sql`SELECT "vkLink" FROM "User" WHERE "squadId" = ${newSquadId} AND role IN ('SQUAD_COMMANDER', 'SQUAD_COMMISSAR') AND "vkLink" IS NOT NULL`
+    
+    const { sendVkMessage } = await import('@/lib/vkBot')
+    const msg = `${session.fullName} переводит бойца ${fighter.fullName} в отряд ${newSquadResult[0]?.name}`
+
+    for (const u of oldCmds as any[]) {
+      await sendVkMessage(u.vkLink, msg)
+    }
+    for (const u of newCmds as any[]) {
+      await sendVkMessage(u.vkLink, msg)
+    }
+
+    return { success: true }
+  } catch (e) {
+    console.error(e)
+    return { error: 'Ошибка при переводе бойца' }
+  }
+}

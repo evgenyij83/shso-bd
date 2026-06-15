@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
+import { useRouter } from 'next/navigation'
 import { MessageSquare, UserPlus, Send, X, Check, ChevronDown, Award, Calendar, Download, Trash2 } from 'lucide-react'
 import { submitAccountRequest } from '@/app/actions/accountRequests'
 import { getAvailableRecipients, sendBulkMessage } from '@/app/actions/messaging'
@@ -12,6 +13,7 @@ type Squad = { id: string, name: string }
 type Recipient = { id: string, fullName: string, role: string, squadName: string | null, hasVk: boolean }
 
 export default function InteractionPanel({ squads, hasVkLink, userRole, pendingAwardsCount = 0, pendingAbsencesCount = 0 }: { squads: Squad[], hasVkLink: boolean, userRole: string, pendingAwardsCount?: number, pendingAbsencesCount?: number }) {
+  const router = useRouter()
   const isHQRole = userRole === 'HQ_COMMANDER' || userRole === 'HQ_COMMISSAR'
   const pendingCount = pendingAwardsCount + pendingAbsencesCount
   
@@ -87,6 +89,7 @@ export default function InteractionPanel({ squads, hasVkLink, userRole, pendingA
     const res = await clearAbsenceHistory()
     if (!res.error) {
       setAbsenceLists([])
+      router.refresh()
     }
     setClearAbsencesLoading(false)
   }

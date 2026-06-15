@@ -45,6 +45,11 @@ export default async function SquadPage(props: { params: Promise<{ id: string }>
 
   const isSquadLeader = session.role === 'SQUAD_COMMANDER' || session.role === 'SQUAD_COMMISSAR'
 
+  let allSquads: any[] = []
+  if (session.role === 'HQ_COMMANDER' || session.role === 'HQ_COMMISSAR' || session.role === 'DEVELOPER') {
+    allSquads = await sql`SELECT id, name FROM "Squad" ORDER BY name ASC` as any[]
+  }
+
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
@@ -74,7 +79,7 @@ export default async function SquadPage(props: { params: Promise<{ id: string }>
       
       <ApplicationsList applications={applications} squadId={squad.id} canEdit={canEdit} />
       
-      <ClientFighterList fighters={squad.fighters} squadId={squad.id} canEdit={canEdit} userRole={session.role} />
+      <ClientFighterList fighters={squad.fighters} squadId={squad.id} canEdit={canEdit} userRole={session.role} allSquads={allSquads} />
     </div>
   )
 }
