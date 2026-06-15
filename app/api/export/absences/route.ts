@@ -63,7 +63,7 @@ export async function GET(request: NextRequest) {
         const monthFromStr = String(entry.monthFrom || list.month).padStart(2, '0')
         const dayToStr = String(entry.dayTo).padStart(2, '0')
         const monthToStr = String(entry.monthTo || list.month).padStart(2, '0')
-        return `с ${entry.timeFrom} ${dayFromStr}.${monthFromStr}.${yearStr} по ${entry.timeTo} ${dayToStr}.${monthToStr}.${yearStr};`
+        return `с ${entry.timeFrom} ${dayFromStr}.${monthFromStr}.${yearStr}\nпо ${entry.timeTo} ${dayToStr}.${monthToStr}.${yearStr};`
       }).join('\n')
 
       return {
