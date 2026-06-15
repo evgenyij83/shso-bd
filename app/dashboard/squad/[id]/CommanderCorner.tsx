@@ -6,6 +6,8 @@ import { Award, AlertTriangle, Calendar, Plus, Trash2, Send } from 'lucide-react
 import { submitAwardNomination } from '@/app/actions/awards'
 import { submitIncidentReport } from '@/app/actions/incidents'
 import { getDraftAbsenceList, createDraftAbsenceList, addAbsenceEntry, removeAbsenceEntry, deleteDraftAbsenceList, submitAbsenceList, getUniversityAdminsForAbsences } from '@/app/actions/absences'
+import { getPendingPracticeRequestsForSquad, processPracticeRequest } from '@/app/actions/practice'
+import { Briefcase } from 'lucide-react'
 
 type Fighter = { id: string, fullName: string, position: string }
 
@@ -17,7 +19,7 @@ function daysInMonth(month: number, year: number): number {
 
 export default function CommanderCorner({ squadId, fighters, userRole }: { squadId: string, fighters: Fighter[], userRole: string }) {
   const [isOpen, setIsOpen] = useState(false)
-  const [activeTab, setActiveTab] = useState<'award' | 'incident' | 'absence'>('award')
+  const [activeTab, setActiveTab] = useState<'award' | 'incident' | 'absence' | 'practice'>('award')
   const [mounted, setMounted] = useState(false)
 
   // Award state
@@ -47,9 +49,15 @@ export default function CommanderCorner({ squadId, fighters, userRole }: { squad
   // New entry form state
   const [newEntryFighter, setNewEntryFighter] = useState('')
   const [newTimeFrom, setNewTimeFrom] = useState('')
-  const [newDateFrom, setNewDateFrom] = useState('')
+  const [newDayFrom, setNewDayFrom] = useState(0)
   const [newTimeTo, setNewTimeTo] = useState('')
-  const [newDateTo, setNewDateTo] = useState('')
+  const [newDayTo, setNewDayTo] = useState(0)
+
+  // Practice state
+  const [practices, setPractices] = useState<any[]>([])
+  const [practicesLoaded, setPracticesLoaded] = useState(false)
+  const [practiceLoadingId, setPracticeLoadingId] = useState('')
+  const [rejectReasons, setRejectReasons] = useState<Record<string, string>>({})
 
   useEffect(() => { setMounted(true) }, [])
 
@@ -68,9 +76,33 @@ export default function CommanderCorner({ squadId, fighters, userRole }: { squad
     setAbsenceLoaded(true)
   }
 
-  function handleTabChange(tab: 'award' | 'incident' | 'absence') {
+  function handleTabChange(tab: 'award' | 'incident' | 'absence' | 'practice') {
     setActiveTab(tab)
     if (tab === 'absence' && !absenceLoaded) loadDraft()
+    if (tab === 'practice' && !practicesLoaded) loadPractices()
+  }
+
+  async function loadPractices() {
+    const p = await getPendingPracticeRequestsForSquad(squadId)
+    setPractices(p)
+    setPracticesLoaded(true)
+  }
+
+  async function handleProcessPractice(id: string, isApproved: boolean) {
+    if (!isApproved) {
+      if (!rejectReasons[id]?.trim()) {
+        alert('Укажите причину отказа')
+        return
+      }
+    }
+    setPracticeLoadingId(id)
+    const res = await processPracticeRequest(id, isApproved, rejectReasons[id])
+    if (!res.error) {
+      setPractices(prev => prev.filter(p => p.id !== id))
+    } else {
+      alert(res.error)
+    }
+    setPracticeLoadingId('')
   }
 
   // Award handlers
@@ -129,20 +161,24 @@ export default function CommanderCorner({ squadId, fighters, userRole }: { squad
     if (!absenceDraft) return
     if (!newEntryFighter) { setAbsError('Выберите бойца'); return }
     if (!newTimeFrom) { setAbsError('Укажите время «С»'); return }
-    if (!newDateFrom) { setAbsError('Выберите дату «С»'); return }
+    if (!newDayFrom) { setAbsError('Выберите день «С»'); return }
     if (!newTimeTo) { setAbsError('Укажите время «По»'); return }
-    if (!newDateTo) { setAbsError('Выберите дату «По»'); return }
+    if (!newDayTo) { setAbsError('Выберите день «По»'); return }
     
-    const [yearF, monthF, dayF] = newDateFrom.split('-').map(Number)
-    const [yearT, monthT, dayT] = newDateTo.split('-').map(Number)
+    let monthF = absenceDraft.month
+    let monthT = absenceDraft.month
+    if (newDayTo < newDayFrom) {
+      monthT += 1
+      if (monthT > 12) monthT = 1
+    }
 
     const fighter = fighters.find(f => f.id === newEntryFighter)
     if (!fighter) return
     setAbsLoading(true); setAbsError('')
-    const res = await addAbsenceEntry(absenceDraft.id, newEntryFighter, fighter.fullName, newTimeFrom, dayF, monthF, newTimeTo, dayT, monthT)
+    const res = await addAbsenceEntry(absenceDraft.id, newEntryFighter, fighter.fullName, newTimeFrom, newDayFrom, monthF, newTimeTo, newDayTo, monthT)
     if (res.error) setAbsError(res.error)
     else {
-      setNewTimeFrom(''); setNewDateFrom(''); setNewTimeTo(''); setNewDateTo('')
+      setNewTimeFrom(''); setNewDayFrom(0); setNewTimeTo(''); setNewDayTo(0)
       await loadDraft()
     }
     setAbsLoading(false)
@@ -217,6 +253,10 @@ export default function CommanderCorner({ squadId, fighters, userRole }: { squad
               <button onClick={() => handleTabChange('absence')}
                 style={{ flex: 1, padding: '0.75rem', background: activeTab === 'absence' ? 'rgba(59, 130, 246, 0.15)' : 'transparent', border: 'none', borderBottom: activeTab === 'absence' ? '2px solid #3b82f6' : '2px solid transparent', color: activeTab === 'absence' ? '#3b82f6' : 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '0.8rem', transition: 'all 0.2s' }}>
                 <Calendar size={14} /> Пропуски
+              </button>
+              <button onClick={() => handleTabChange('practice')}
+                style={{ flex: 1, padding: '0.75rem', background: activeTab === 'practice' ? 'rgba(168, 85, 247, 0.15)' : 'transparent', border: 'none', borderBottom: activeTab === 'practice' ? '2px solid #a855f7' : '2px solid transparent', color: activeTab === 'practice' ? '#a855f7' : 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '0.8rem', transition: 'all 0.2s' }}>
+                <Briefcase size={14} /> Практика
               </button>
             </div>
 
@@ -354,16 +394,22 @@ export default function CommanderCorner({ squadId, fighters, userRole }: { squad
                             <input type="time" value={newTimeFrom} onChange={e => setNewTimeFrom(e.target.value)} className="input-field" />
                           </div>
                           <div>
-                            <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>С — Дата:</label>
-                            <input type="date" value={newDateFrom} onChange={e => setNewDateFrom(e.target.value)} className="input-field" />
+                            <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>С — День:</label>
+                            <select value={newDayFrom} onChange={e => setNewDayFrom(Number(e.target.value))} className="input-field">
+                              <option value={0}>-- День --</option>
+                              {Array.from({ length: maxDays }, (_, i) => i + 1).map(d => <option key={d} value={d}>{d}</option>)}
+                            </select>
                           </div>
                           <div>
                             <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>По — Время:</label>
                             <input type="time" value={newTimeTo} onChange={e => setNewTimeTo(e.target.value)} className="input-field" />
                           </div>
                           <div>
-                            <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>По — Дата:</label>
-                            <input type="date" value={newDateTo} onChange={e => setNewDateTo(e.target.value)} className="input-field" />
+                            <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>По — День:</label>
+                            <select value={newDayTo} onChange={e => setNewDayTo(Number(e.target.value))} className="input-field">
+                              <option value={0}>-- День --</option>
+                              {Array.from({ length: maxDays }, (_, i) => i + 1).map(d => <option key={d} value={d}>{d}</option>)}
+                            </select>
                           </div>
                         </div>
                         <button onClick={handleAddEntry} disabled={absLoading} style={{ width: '100%', padding: '8px', background: 'rgba(59,130,246,0.2)', color: '#3b82f6', border: '1px solid rgba(59,130,246,0.3)', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '0.85rem' }}>
@@ -390,6 +436,54 @@ export default function CommanderCorner({ squadId, fighters, userRole }: { squad
                 </div>
               )}
 
+              {/* === Tab: Practice === */}
+              {activeTab === 'practice' && (
+                <div>
+                  <h4 style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '1rem' }}>Заявки на прохождение практики:</h4>
+                  {!practicesLoaded && <div style={{ color: 'var(--text-secondary)' }}>Загрузка...</div>}
+                  {practicesLoaded && practices.length === 0 && <div style={{ color: 'var(--text-secondary)' }}>Нет заявок на практику</div>}
+                  {practices.map(p => (
+                    <div key={p.id} style={{ background: 'rgba(168, 85, 247, 0.1)', border: '1px solid rgba(168, 85, 247, 0.3)', borderRadius: '8px', padding: '1rem', marginBottom: '1rem' }}>
+                      <div style={{ marginBottom: '0.75rem' }}>
+                        <div style={{ color: '#c084fc', fontWeight: 600, fontSize: '1.05rem', marginBottom: '4px' }}>{p.practiceType} практика</div>
+                        <div style={{ color: 'var(--text-primary)', fontSize: '0.95rem' }}>{p.fullName}</div>
+                        <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                          Факультет: {p.faculty}, Курс: {p.course}, Группа: {p.studyGroup}<br/>
+                          Сроки: {p.period}<br/>
+                          Телефон: {p.phone}<br/>
+                          ВК: <a href={p.vkLink} target="_blank" style={{ color: '#3b82f6' }}>{p.vkLink}</a>
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                        <input 
+                          type="text" 
+                          placeholder="Причина отказа (обязательно при отклонении)" 
+                          className="input-field" 
+                          value={rejectReasons[p.id] || ''}
+                          onChange={e => setRejectReasons(prev => ({ ...prev, [p.id]: e.target.value }))}
+                          style={{ fontSize: '0.85rem' }}
+                        />
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                          <button 
+                            onClick={() => handleProcessPractice(p.id, true)} 
+                            disabled={practiceLoadingId === p.id}
+                            style={{ flex: 1, padding: '8px', background: 'rgba(52,211,153,0.2)', color: '#34d399', border: '1px solid rgba(52,211,153,0.3)', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem' }}
+                          >
+                            Одобрить
+                          </button>
+                          <button 
+                            onClick={() => handleProcessPractice(p.id, false)} 
+                            disabled={practiceLoadingId === p.id}
+                            style={{ flex: 1, padding: '8px', background: 'rgba(239,68,68,0.2)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem' }}
+                          >
+                            Отклонить
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>,

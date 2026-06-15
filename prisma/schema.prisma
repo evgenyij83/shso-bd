@@ -50,6 +50,7 @@ model Squad {
   awardNominations AwardNomination[]
   incidentReports  IncidentReport[]
   absenceLists     AbsenceList[]
+  practiceRequests PracticeRequest[]
   EventParticipant EventParticipant[]
   EventSubmission  EventSubmission[]
 }
@@ -207,4 +208,22 @@ model EventSubmission {
   createdAt DateTime @default(now())
 
   @@unique([eventId, squadId])
+}
+
+model PracticeRequest {
+  id           String   @id @default(cuid())
+  practiceType String
+  squadId      String
+  squad        Squad    @relation(fields: [squadId], references: [id], onDelete: Cascade)
+  fullName     String
+  faculty      String
+  course       Int
+  studyGroup   String
+  period       String
+  phone        String
+  vkLink       String
+  status       String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  processedBy  String?
+  rejectReason String?
+  createdAt    DateTime @default(now())
 }

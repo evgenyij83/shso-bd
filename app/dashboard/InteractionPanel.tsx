@@ -8,18 +8,20 @@ import { submitAccountRequest } from '@/app/actions/accountRequests'
 import { getAvailableRecipients, sendBulkMessage } from '@/app/actions/messaging'
 import { getPendingAwardNominations, approveByHQ, approveByUniversity, getUniversityAdmins } from '@/app/actions/awards'
 import { getPendingAbsenceLists, clearAbsenceHistory, markAbsenceListDownloaded, deleteAbsenceList } from '@/app/actions/absences'
+import { getPendingPracticeRequestsForUni, processPracticeRequest } from '@/app/actions/practice'
+import { Briefcase } from 'lucide-react'
 
 type Squad = { id: string, name: string }
 type Recipient = { id: string, fullName: string, role: string, squadName: string | null, hasVk: boolean }
 
-export default function InteractionPanel({ squads, hasVkLink, userRole, pendingAwardsCount = 0, pendingAbsencesCount = 0 }: { squads: Squad[], hasVkLink: boolean, userRole: string, pendingAwardsCount?: number, pendingAbsencesCount?: number }) {
+export default function InteractionPanel({ squads, hasVkLink, userRole, pendingAwardsCount = 0, pendingAbsencesCount = 0, pendingPracticeCount = 0 }: { squads: Squad[], hasVkLink: boolean, userRole: string, pendingAwardsCount?: number, pendingAbsencesCount?: number, pendingPracticeCount?: number }) {
   const router = useRouter()
   const isHQRole = userRole === 'HQ_COMMANDER' || userRole === 'HQ_COMMISSAR'
-  const pendingCount = pendingAwardsCount + pendingAbsencesCount
+  const pendingCount = pendingAwardsCount + pendingAbsencesCount + pendingPracticeCount
   
   const [isOpen, setIsOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
-  const [activeTab, setActiveTab] = useState<'request' | 'message' | 'awards' | 'absences'>('request')
+  const [activeTab, setActiveTab] = useState<'request' | 'message' | 'awards' | 'absences' | 'practice'>('request')
 
   // Request form state
   const [reqLoading, setReqLoading] = useState(false)
@@ -51,8 +53,15 @@ export default function InteractionPanel({ squads, hasVkLink, userRole, pendingA
   const [absencesLoaded, setAbsencesLoaded] = useState(false)
   const [clearAbsencesLoading, setClearAbsencesLoading] = useState(false)
 
+  // Practice state (University only)
+  const [practices, setPractices] = useState<any[]>([])
+  const [practicesLoaded, setPracticesLoaded] = useState(false)
+  const [practiceLoadingId, setPracticeLoadingId] = useState('')
+  const [rejectReasons, setRejectReasons] = useState<Record<string, string>>({})
+
   const showAwardsTab = isHQRole || userRole === 'UNIVERSITY_ADMIN'
   const showAbsencesTab = userRole === 'UNIVERSITY_ADMIN'
+  const showPracticeTab = userRole === 'UNIVERSITY_ADMIN'
 
   useEffect(() => { setMounted(true) }, [])
 
@@ -69,11 +78,37 @@ export default function InteractionPanel({ squads, hasVkLink, userRole, pendingA
     setRecipientsLoaded(true)
   }
 
-  function handleTabChange(tab: 'request' | 'message' | 'awards' | 'absences') {
+  function handleTabChange(tab: 'request' | 'message' | 'awards' | 'absences' | 'practice') {
     setActiveTab(tab)
     if (tab === 'message') loadRecipients()
     if (tab === 'awards') loadAwards()
     if (tab === 'absences') loadAbsences()
+    if (tab === 'practice') loadPractices()
+  }
+
+  async function loadPractices() {
+    if (practicesLoaded) return
+    const data = await getPendingPracticeRequestsForUni()
+    setPractices(data)
+    setPracticesLoaded(true)
+  }
+
+  async function handleProcessPractice(id: string, isApproved: boolean) {
+    if (!isApproved) {
+      if (!rejectReasons[id]?.trim()) {
+        alert('Укажите причину отказа')
+        return
+      }
+    }
+    setPracticeLoadingId(id)
+    const res = await processPracticeRequest(id, isApproved, rejectReasons[id])
+    if (!res.error) {
+      setPractices(prev => prev.filter(p => p.id !== id))
+      router.refresh()
+    } else {
+      alert(res.error)
+    }
+    setPracticeLoadingId('')
   }
 
   async function loadAbsences() {
@@ -246,6 +281,19 @@ export default function InteractionPanel({ squads, hasVkLink, userRole, pendingA
                   {pendingAbsencesCount > 0 && (
                     <span style={{ position: 'absolute', top: '8px', right: '8px', background: 'var(--danger-color)', color: 'white', fontSize: '0.7rem', fontWeight: 'bold', padding: '1px 5px', borderRadius: '10px' }}>
                       {pendingAbsencesCount}
+                    </span>
+                  )}
+                </button>
+              )}
+              {showPracticeTab && (
+                <button 
+                  onClick={() => handleTabChange('practice')}
+                  style={{ position: 'relative', flex: 1, padding: '0.75rem', background: activeTab === 'practice' ? 'rgba(168, 85, 247, 0.15)' : 'transparent', border: 'none', borderBottom: activeTab === 'practice' ? '2px solid #a855f7' : '2px solid transparent', color: activeTab === 'practice' ? '#a855f7' : 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '0.85rem', transition: 'all 0.2s' }}
+                >
+                  <Briefcase size={14} /> Практика
+                  {pendingPracticeCount > 0 && (
+                    <span style={{ position: 'absolute', top: '8px', right: '8px', background: 'var(--danger-color)', color: 'white', fontSize: '0.7rem', fontWeight: 'bold', padding: '1px 5px', borderRadius: '10px' }}>
+                      {pendingPracticeCount}
                     </span>
                   )}
                 </button>
@@ -536,6 +584,55 @@ export default function InteractionPanel({ squads, hasVkLink, userRole, pendingA
                       </div>
                     )
                   })}
+                </div>
+              )}
+
+              {/* Tab: Practice (University only) */}
+              {activeTab === 'practice' && (
+                <div>
+                  <h4 style={{ color: '#a855f7', fontSize: '0.9rem', marginBottom: '1rem' }}>Заявки на прохождение практики</h4>
+                  {!practicesLoaded && <div style={{ color: 'var(--text-secondary)' }}>Загрузка...</div>}
+                  {practicesLoaded && practices.length === 0 && <div style={{ color: 'var(--text-secondary)' }}>Нет заявок на практику</div>}
+                  {practices.map(p => (
+                    <div key={p.id} style={{ background: 'rgba(168, 85, 247, 0.1)', border: '1px solid rgba(168, 85, 247, 0.3)', borderRadius: '8px', padding: '1rem', marginBottom: '1rem' }}>
+                      <div style={{ marginBottom: '0.75rem' }}>
+                        <div style={{ color: '#c084fc', fontWeight: 600, fontSize: '1.05rem', marginBottom: '4px' }}>{p.practiceType} практика ({p.squadName})</div>
+                        <div style={{ color: 'var(--text-primary)', fontSize: '0.95rem' }}>{p.fullName}</div>
+                        <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                          Факультет: {p.faculty}, Курс: {p.course}, Группа: {p.studyGroup}<br/>
+                          Сроки: {p.period}<br/>
+                          Телефон: {p.phone}<br/>
+                          ВК: <a href={p.vkLink} target="_blank" style={{ color: '#3b82f6' }}>{p.vkLink}</a>
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                        <input 
+                          type="text" 
+                          placeholder="Причина отказа (обязательно при отклонении)" 
+                          className="input-field" 
+                          value={rejectReasons[p.id] || ''}
+                          onChange={e => setRejectReasons(prev => ({ ...prev, [p.id]: e.target.value }))}
+                          style={{ fontSize: '0.85rem' }}
+                        />
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                          <button 
+                            onClick={() => handleProcessPractice(p.id, true)} 
+                            disabled={practiceLoadingId === p.id}
+                            style={{ flex: 1, padding: '8px', background: 'rgba(52,211,153,0.2)', color: '#34d399', border: '1px solid rgba(52,211,153,0.3)', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem' }}
+                          >
+                            Одобрить
+                          </button>
+                          <button 
+                            onClick={() => handleProcessPractice(p.id, false)} 
+                            disabled={practiceLoadingId === p.id}
+                            style={{ flex: 1, padding: '8px', background: 'rgba(239,68,68,0.2)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem' }}
+                          >
+                            Отклонить
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
 

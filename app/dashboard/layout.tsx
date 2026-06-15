@@ -44,6 +44,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   let squads: any[] = []
   let pendingAwardsCount = 0
   let pendingAbsencesCount = 0
+  let pendingPracticeCount = 0
   if (showInteractionPanel) {
     squads = await sql`SELECT id, name FROM "Squad" ORDER BY name ASC` as any[]
     
@@ -55,6 +56,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
       const absenceRes = await sql`SELECT COUNT(*) as count FROM "AbsenceList" WHERE status = 'SENT' AND "targetAdminUserId" = ${session.userId}`
       pendingAwardsCount = parseInt(awardRes[0].count, 10)
       pendingAbsencesCount = parseInt(absenceRes[0].count, 10)
+      const pracRes = await sql`SELECT COUNT(*) as count FROM "PracticeRequest" WHERE status = 'PENDING'`
+      pendingPracticeCount = parseInt(pracRes[0].count, 10)
     }
   }
 
@@ -74,7 +77,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
           <ReadStatuteButton statute={statute} />
           {showInteractionPanel && (
-            <InteractionPanel squads={squads} hasVkLink={!!session.vkLink} userRole={session.role} pendingAwardsCount={pendingAwardsCount} pendingAbsencesCount={pendingAbsencesCount} />
+            <InteractionPanel squads={squads} hasVkLink={!!session.vkLink} userRole={session.role} pendingAwardsCount={pendingAwardsCount} pendingAbsencesCount={pendingAbsencesCount} pendingPracticeCount={pendingPracticeCount} />
           )}
           <Link href="/dashboard/events" style={{ color: 'var(--text-primary)', textDecoration: 'none', background: 'rgba(16, 185, 129, 0.2)', padding: '8px 16px', borderRadius: '8px', fontSize: '0.9rem' }}>
             Мероприятия

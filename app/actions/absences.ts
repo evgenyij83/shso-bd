@@ -174,7 +174,7 @@ export async function getPendingAbsenceLists() {
       FROM "AbsenceList" al
       JOIN "Squad" s ON al."squadId" = s.id
       LEFT JOIN "User" u ON al."sentByUserId" = u.id
-      WHERE al.status = 'SENT' AND al."targetAdminUserId" = ${session.userId}
+      WHERE al.status IN ('SENT', 'DOWNLOADED') AND al."targetAdminUserId" = ${session.userId}
       ORDER BY al."createdAt" DESC
     `
     return lists

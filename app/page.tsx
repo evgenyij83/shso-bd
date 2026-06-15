@@ -1,8 +1,10 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { login } from './actions/auth'
 import { submitIdentifierRequest } from './actions/identifierRequests'
+import { getSquadsForPractice } from './actions/practice'
 import { KeyRound, LogIn, HelpCircle, X } from 'lucide-react'
+import PracticeRequestModal from './PracticeRequestModal'
 
 export default function LoginPage() {
   const [code, setCode] = useState('')
@@ -16,6 +18,14 @@ export default function LoginPage() {
   const [forgotLoading, setForgotLoading] = useState(false)
   const [forgotError, setForgotError] = useState('')
   const [forgotSuccess, setForgotSuccess] = useState('')
+
+  // Practice state
+  const [showPractice, setShowPractice] = useState(false)
+  const [squads, setSquads] = useState<any[]>([])
+
+  useEffect(() => {
+    getSquadsForPractice().then(data => setSquads(data))
+  }, [])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -85,9 +95,14 @@ export default function LoginPage() {
 
         <div style={{ marginTop: '1.5rem', textAlign: 'center', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '1.5rem' }}>
           <p style={{ fontSize: '0.9rem', marginBottom: '1rem', color: 'var(--text-secondary)' }}>Студент ПГУПС?</p>
-          <a href="/apply" style={{ display: 'inline-block', padding: '10px 20px', background: 'rgba(255,255,255,0.1)', color: 'var(--text-primary)', textDecoration: 'none', borderRadius: '8px', fontSize: '0.95rem', transition: 'all 0.2s' }}>
-            Хочу вступить в отряд
-          </a>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <a href="/apply" style={{ display: 'block', padding: '10px 20px', background: 'rgba(255,255,255,0.1)', color: 'var(--text-primary)', textDecoration: 'none', borderRadius: '8px', fontSize: '0.95rem', transition: 'all 0.2s' }}>
+              Хочу вступить в отряд
+            </a>
+            <button onClick={() => setShowPractice(true)} style={{ width: '100%', padding: '10px 20px', background: 'rgba(52,211,153,0.15)', color: '#34d399', border: '1px solid rgba(52,211,153,0.3)', borderRadius: '8px', fontSize: '0.95rem', cursor: 'pointer', transition: 'all 0.2s' }}>
+              Практика в отряде
+            </button>
+          </div>
         </div>
       </div>
 
@@ -132,6 +147,9 @@ export default function LoginPage() {
           </div>
         </div>
       )}
+
+      {/* Practice Request Modal */}
+      <PracticeRequestModal isOpen={showPractice} onClose={() => setShowPractice(false)} squads={squads} />
     </div>
   )
 }
