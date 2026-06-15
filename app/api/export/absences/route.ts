@@ -1,14 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import sql from '@/lib/db'
 import { getSession } from '@/app/actions/auth'
-import { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, HeadingLevel, WidthType, AlignmentType, BorderStyle } from 'docx'
+import fs from 'fs'
+import path from 'path'
+import PizZip from 'pizzip'
+import Docxtemplater from 'docxtemplater'
 
 const monthNames = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь']
-
-function cellBorders() {
-  const border = { style: BorderStyle.SINGLE, size: 1, color: '000000' }
-  return { top: border, bottom: border, left: border, right: border }
-}
 
 export async function GET(request: NextRequest) {
   const session = await getSession()
@@ -44,143 +42,58 @@ export async function GET(request: NextRequest) {
     `
 
     // Group entries by fighter
-    const fightersMap = new Map<string, { name: string, group: string, dates: any[] }>()
+    const fightersMap = new Map<string, { name: string, group: string, datesList: any[] }>()
     for (const entry of entries as any[]) {
       if (!fightersMap.has(entry.fighterId)) {
         fightersMap.set(entry.fighterId, {
           name: entry.fighterName,
           group: entry.studyGroup || '—',
-          dates: []
+          datesList: []
         })
       }
-      fightersMap.get(entry.fighterId)!.dates.push(entry)
+      fightersMap.get(entry.fighterId)!.datesList.push(entry)
     }
-
-    // Header row
-    const headerRow = new TableRow({
-      children: [
-        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: '№ п/п', size: 24 })], alignment: AlignmentType.CENTER })], borders: cellBorders(), width: { size: 600, type: WidthType.DXA }, verticalAlign: 'center' }),
-        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'ФИО', size: 24 })], alignment: AlignmentType.CENTER })], borders: cellBorders(), width: { size: 3000, type: WidthType.DXA }, verticalAlign: 'center' }),
-        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Учебная группа', size: 24 })], alignment: AlignmentType.CENTER })], borders: cellBorders(), width: { size: 1500, type: WidthType.DXA }, verticalAlign: 'center' }),
-        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Даты пропуска занятий в связи с работой в студенческом отряде', size: 24 })], alignment: AlignmentType.CENTER })], borders: cellBorders(), width: { size: 4000, type: WidthType.DXA }, verticalAlign: 'center' }),
-      ]
-    })
-
-    const dataRows: TableRow[] = []
-    let index = 1
 
     const monthStr = String(list.month).padStart(2, '0')
     const yearStr = String(list.year)
 
-    for (const [_, fighterData] of Array.from(fightersMap.entries())) {
-      const datesParagraphs = fighterData.dates.flatMap((entry, i) => {
+    const fighters = Array.from(fightersMap.values()).map((f, i) => {
+      const datesText = f.datesList.map(entry => {
         const dayFromStr = String(entry.dayFrom).padStart(2, '0')
         const monthFromStr = String(entry.monthFrom || list.month).padStart(2, '0')
         const dayToStr = String(entry.dayTo).padStart(2, '0')
         const monthToStr = String(entry.monthTo || list.month).padStart(2, '0')
-        
-        return [
-          new Paragraph({ children: [new TextRun({ text: `с ${entry.timeFrom} ${dayFromStr}.${monthFromStr}.${yearStr}`, size: 24 })], alignment: AlignmentType.CENTER }),
-          new Paragraph({ children: [new TextRun({ text: `по ${entry.timeTo} ${dayToStr}.${monthToStr}.${yearStr};`, size: 24 })], alignment: AlignmentType.CENTER })
-        ]
-      })
+        return `с ${entry.timeFrom} ${dayFromStr}.${monthFromStr}.${yearStr} по ${entry.timeTo} ${dayToStr}.${monthToStr}.${yearStr};`
+      }).join('\n')
 
-      dataRows.push(
-        new TableRow({
-          children: [
-            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: index.toString(), size: 24 })], alignment: AlignmentType.CENTER })], borders: cellBorders(), verticalAlign: 'center' }),
-            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: fighterData.name, size: 24 })], alignment: AlignmentType.CENTER })], borders: cellBorders(), verticalAlign: 'center' }),
-            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: fighterData.group, size: 24 })], alignment: AlignmentType.CENTER })], borders: cellBorders(), verticalAlign: 'center' }),
-            new TableCell({ children: datesParagraphs, borders: cellBorders(), verticalAlign: 'center' }),
-          ]
-        })
-      )
-      index++
-    }
-
-    const noBorders = {
-      top: { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' },
-      bottom: { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' },
-      left: { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' },
-      right: { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' }
-    }
-
-    const doc = new Document({
-      sections: [{
-        properties: {
-          page: {
-            margin: { top: 1000, right: 1000, bottom: 1000, left: 1000 }
-          }
-        },
-        children: [
-          new Table({
-            width: { size: 100, type: WidthType.PERCENTAGE },
-            borders: noBorders,
-            rows: [
-              new TableRow({
-                children: [
-                  new TableCell({
-                    borders: noBorders,
-                    width: { size: 5000, type: WidthType.DXA },
-                    children: [
-                      new Paragraph({ children: [new TextRun({ text: 'ФГБОУ ВО ПГУПС', bold: true, size: 24 })] }),
-                      new Paragraph({ children: [new TextRun({ text: 'Центр карьеры Управления по', size: 24 })] }),
-                      new Paragraph({ children: [new TextRun({ text: 'связям с производством', size: 24 })], spacing: { after: 200 } }),
-                      new Paragraph({ children: [new TextRun({ text: 'ДОКЛАДНАЯ ЗАПИСКА', bold: true, size: 24 })], alignment: AlignmentType.CENTER, spacing: { after: 200 } }),
-                      new Paragraph({ children: [new TextRun({ text: '_________ № _________', size: 24 })], alignment: AlignmentType.CENTER, spacing: { after: 200 } }),
-                      new Paragraph({ children: [new TextRun({ text: '┏                                                                 ┓', size: 24 })] }),
-                      new Paragraph({ children: [new TextRun({ text: 'О пропуске занятий по', bold: true, size: 24 })], alignment: AlignmentType.CENTER }),
-                      new Paragraph({ children: [new TextRun({ text: 'уважительной причине', bold: true, size: 24 })], alignment: AlignmentType.CENTER }),
-                      new Paragraph({ children: [new TextRun({ text: '┗                                                                 ┛', size: 24 })], spacing: { after: 200 } }),
-                    ]
-                  }),
-                  new TableCell({
-                    borders: noBorders,
-                    width: { size: 4000, type: WidthType.DXA },
-                    children: [
-                      new Paragraph({ children: [new TextRun({ text: 'Деканам факультетов', size: 24 })], alignment: AlignmentType.RIGHT, spacing: { after: 600 } }),
-                      new Paragraph({
-                        children: [
-                          new TextRun({ text: `\tВ связи с участием следующих обучающихся в студенческом отряде «${list.squadName}», прошу считать пропуск занятий в указанные даты по уважительной причине:`, size: 24 })
-                        ],
-                        alignment: AlignmentType.JUSTIFIED,
-                        spacing: { after: 200 }
-                      })
-                    ]
-                  })
-                ]
-              })
-            ]
-          }),
-          new Table({
-            width: { size: 100, type: WidthType.PERCENTAGE },
-            rows: [headerRow, ...dataRows]
-          }),
-          new Paragraph({
-            children: [
-              new TextRun({ text: '', size: 24 })
-            ],
-            spacing: { after: 400 }
-          }),
-          new Paragraph({
-            children: [
-              new TextRun({ text: 'Начальник центра карьеры Управления', size: 24 }),
-            ],
-            alignment: AlignmentType.LEFT,
-          }),
-          new Paragraph({
-            children: [
-              new TextRun({ text: 'по связям с производством\t\t\t\t\tИ.А. Баранов', size: 24 })
-            ],
-            alignment: AlignmentType.LEFT,
-          }),
-        ]
-      }]
+      return {
+        index: i + 1,
+        fullName: f.name,
+        studyGroup: f.group,
+        dates: datesText
+      }
     })
 
-    const buffer = await Packer.toBuffer(doc)
+    const templatePath = path.resolve(process.cwd(), 'public/templates/absences_template.docx')
+    const content = fs.readFileSync(templatePath, 'binary')
 
-    const safeName = encodeURIComponent(`Smena_${list.squadName.replace(/\s+/g, '_')}_${monthName}_${list.year}`)
+    const zip = new PizZip(content)
+    const doc = new Docxtemplater(zip, {
+      paragraphLoop: true,
+      linebreaks: true,
+    })
+
+    doc.render({
+      squadName: list.squadName,
+      fighters: fighters
+    })
+
+    const buffer = doc.getZip().generate({
+      type: 'nodebuffer',
+      compression: 'DEFLATE',
+    })
+
+    const safeName = encodeURIComponent(`Пропуски_${list.squadName.replace(/\s+/g, '_')}_${monthName}_${list.year}`)
 
     return new NextResponse(buffer as unknown as BodyInit, {
       headers: {
