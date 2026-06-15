@@ -16,6 +16,7 @@ export default function AdminForms({ squads, users = [] }: { squads: Squad[], us
   const [userError, setUserError] = useState('')
   const [userSuccess, setUserSuccess] = useState('')
   const [selectedRole, setSelectedRole] = useState('UNIVERSITY_ADMIN')
+  const [selectedSquadId, setSelectedSquadId] = useState('')
 
   async function handleAddSquad(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -139,10 +140,21 @@ export default function AdminForms({ squads, users = [] }: { squads: Squad[], us
                   name="squadId" 
                   className="input-field" 
                   required={selectedRole === 'SQUAD_COMMANDER' || selectedRole === 'SQUAD_COMMISSAR'}
+                  value={selectedSquadId}
+                  onChange={e => setSelectedSquadId(e.target.value)}
                 >
                   <option value="">-- Выберите отряд -- {(selectedRole === 'HQ_COMMANDER' || selectedRole === 'HQ_COMMISSAR') && '(опционально)'}</option>
                   {squads.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                 </select>
+                
+                {(selectedRole === 'HQ_COMMANDER' || selectedRole === 'HQ_COMMISSAR') && selectedSquadId && (
+                  <select name="squadRole" className="input-field" required>
+                    <option value="">-- Роль в отряде --</option>
+                    <option value="Боец">Боец</option>
+                    <option value="Командир">Командир отряда</option>
+                    <option value="Комиссар">Комиссар отряда</option>
+                  </select>
+                )}
                 
                 <input name="fullName" placeholder="ФИО (обязательно)" className="input-field" required />
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>

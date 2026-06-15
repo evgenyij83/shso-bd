@@ -79,8 +79,10 @@ export async function addUser(formData: FormData) {
         let position = 'Боец'
         if (role === 'SQUAD_COMMANDER') position = 'Командир'
         if (role === 'SQUAD_COMMISSAR') position = 'Комиссар'
-        if (role === 'HQ_COMMANDER') position = 'Командир штаба'
-        if (role === 'HQ_COMMISSAR') position = 'Комиссар штаба'
+        if (role === 'HQ_COMMANDER' || role === 'HQ_COMMISSAR') {
+          const squadRole = formData.get('squadRole') as string
+          position = squadRole || 'Боец'
+        }
 
         await sql`
           INSERT INTO "Fighter" (id, "squadId", "fullName", position, faculty, "studyGroup", course, "educationForm", phone, "vkLink") 

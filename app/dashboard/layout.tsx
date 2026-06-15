@@ -51,7 +51,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
       pendingInteractionCount = parseInt(awardRes[0].count, 10)
     } else if (session.role === 'UNIVERSITY_ADMIN') {
       const awardRes = await sql`SELECT COUNT(*) as count FROM "AwardNomination" WHERE status = 'PENDING_UNIVERSITY' AND "targetAdminUserId" = ${session.userId}`
-      pendingInteractionCount = parseInt(awardRes[0].count, 10)
+      const absenceRes = await sql`SELECT COUNT(*) as count FROM "AbsenceList" WHERE status = 'SENT' AND "targetAdminUserId" = ${session.userId}`
+      pendingInteractionCount = parseInt(awardRes[0].count, 10) + parseInt(absenceRes[0].count, 10)
     }
   }
 

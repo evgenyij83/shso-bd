@@ -2,10 +2,11 @@
 
 import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
-import { MessageSquare, UserPlus, Send, X, Check, ChevronDown, Award } from 'lucide-react'
+import { MessageSquare, UserPlus, Send, X, Check, ChevronDown, Award, Calendar, Download } from 'lucide-react'
 import { submitAccountRequest } from '@/app/actions/accountRequests'
 import { getAvailableRecipients, sendBulkMessage } from '@/app/actions/messaging'
 import { getPendingAwardNominations, approveByHQ, approveByUniversity, getUniversityAdmins } from '@/app/actions/awards'
+import { getPendingAbsenceLists } from '@/app/actions/absences'
 
 type Squad = { id: string, name: string }
 type Recipient = { id: string, fullName: string, role: string, squadName: string | null, hasVk: boolean }
@@ -15,7 +16,7 @@ export default function InteractionPanel({ squads, hasVkLink, userRole, pendingC
   
   const [isOpen, setIsOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
-  const [activeTab, setActiveTab] = useState<'request' | 'message' | 'awards'>('request')
+  const [activeTab, setActiveTab] = useState<'request' | 'message' | 'awards' | 'absences'>('request')
 
   // Request form state
   const [reqLoading, setReqLoading] = useState(false)
@@ -42,7 +43,12 @@ export default function InteractionPanel({ squads, hasVkLink, userRole, pendingC
   const [awardError, setAwardError] = useState('')
   const [awardSuccess, setAwardSuccess] = useState('')
 
+  // Absences state (University only)
+  const [absenceLists, setAbsenceLists] = useState<any[]>([])
+  const [absencesLoaded, setAbsencesLoaded] = useState(false)
+
   const showAwardsTab = isHQRole || userRole === 'UNIVERSITY_ADMIN'
+  const showAbsencesTab = userRole === 'UNIVERSITY_ADMIN'
 
   useEffect(() => { setMounted(true) }, [])
 
@@ -59,10 +65,18 @@ export default function InteractionPanel({ squads, hasVkLink, userRole, pendingC
     setRecipientsLoaded(true)
   }
 
-  function handleTabChange(tab: 'request' | 'message' | 'awards') {
+  function handleTabChange(tab: 'request' | 'message' | 'awards' | 'absences') {
     setActiveTab(tab)
     if (tab === 'message') loadRecipients()
     if (tab === 'awards') loadAwards()
+    if (tab === 'absences') loadAbsences()
+  }
+
+  async function loadAbsences() {
+    if (absencesLoaded) return
+    const data = await getPendingAbsenceLists()
+    setAbsenceLists(data as any[])
+    setAbsencesLoaded(true)
   }
 
   async function loadAwards() {
@@ -191,6 +205,14 @@ export default function InteractionPanel({ squads, hasVkLink, userRole, pendingC
                       {pendingCount}
                     </span>
                   )}
+                </button>
+              )}
+              {showAbsencesTab && (
+                <button 
+                  onClick={() => handleTabChange('absences')}
+                  style={{ flex: 1, padding: '0.75rem', background: activeTab === 'absences' ? 'rgba(59, 130, 246, 0.15)' : 'transparent', border: 'none', borderBottom: activeTab === 'absences' ? '2px solid #3b82f6' : '2px solid transparent', color: activeTab === 'absences' ? '#3b82f6' : 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '0.85rem', transition: 'all 0.2s' }}
+                >
+                  <Calendar size={14} /> Пропуски
                 </button>
               )}
             </div>
@@ -439,6 +461,34 @@ export default function InteractionPanel({ squads, hasVkLink, userRole, pendingC
                       </button>
                     </div>
                   ))}
+                </div>
+              )}
+
+              {/* Tab: Absences (University only) */}
+              {activeTab === 'absences' && (
+                <div>
+                  <h4 style={{ color: '#3b82f6', fontSize: '0.9rem', marginBottom: '1rem' }}>Полученные списки пропусков</h4>
+                  {!absencesLoaded && <div style={{ color: 'var(--text-secondary)' }}>Загрузка...</div>}
+                  {absencesLoaded && absenceLists.length === 0 && <div style={{ color: 'var(--text-secondary)', textAlign: 'center', padding: '2rem' }}>Нет новых списков</div>}
+                  {absenceLists.map((list: any) => {
+                    const monthNames = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь']
+                    const senderRole = list.senderRole === 'SQUAD_COMMANDER' || list.senderRole === 'HQ_COMMANDER' ? 'Командир' : 'Комиссар'
+                    return (
+                      <div key={list.id} style={{ background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '8px', marginBottom: '1rem', border: '1px solid rgba(59,130,246,0.2)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+                          <div>
+                            <div style={{ fontSize: '0.9rem', color: 'var(--text-primary)', fontWeight: 600 }}>{list.squadName}</div>
+                            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                              {senderRole} {list.senderName} — {monthNames[(list.month as number) - 1]} {list.year}
+                            </div>
+                          </div>
+                          <a href={`/api/export/absences?listId=${list.id}`} target="_blank" style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', background: 'rgba(59,130,246,0.2)', color: '#3b82f6', border: '1px solid rgba(59,130,246,0.3)', borderRadius: '8px', textDecoration: 'none', fontSize: '0.85rem', cursor: 'pointer' }}>
+                            <Download size={14} /> Скачать Word
+                          </a>
+                        </div>
+                      </div>
+                    )
+                  })}
                 </div>
               )}
 

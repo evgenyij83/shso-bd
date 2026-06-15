@@ -48,6 +48,7 @@ model Squad {
   accountRequests AccountRequest[]
   awardNominations AwardNomination[]
   incidentReports IncidentReport[]
+  absenceLists    AbsenceList[]
 }
 
 model AccountRequest {
@@ -136,5 +137,30 @@ model IncidentReport {
   description       String
   involvedNames     String   // JSON array of fighter names
   createdAt         DateTime @default(now())
+}
+
+model AbsenceList {
+  id                String         @id @default(cuid())
+  squadId           String
+  squad             Squad          @relation(fields: [squadId], references: [id])
+  month             Int
+  year              Int
+  status            String         @default("DRAFT") // DRAFT, SENT
+  sentByUserId      String?
+  targetAdminUserId String?
+  createdAt         DateTime       @default(now())
+  entries           AbsenceEntry[]
+}
+
+model AbsenceEntry {
+  id            String      @id @default(cuid())
+  absenceListId String
+  absenceList   AbsenceList @relation(fields: [absenceListId], references: [id], onDelete: Cascade)
+  fighterId     String
+  fighterName   String
+  timeFrom      String
+  dayFrom       Int
+  timeTo        String
+  dayTo         Int
 }
 
