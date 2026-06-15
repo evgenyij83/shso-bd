@@ -42,17 +42,19 @@ export default async function DashboardLayout({ children }: { children: React.Re
   }
 
   let squads: any[] = []
-  let pendingInteractionCount = 0
+  let pendingAwardsCount = 0
+  let pendingAbsencesCount = 0
   if (showInteractionPanel) {
     squads = await sql`SELECT id, name FROM "Squad" ORDER BY name ASC` as any[]
     
     if (isHQ) {
       const awardRes = await sql`SELECT COUNT(*) as count FROM "AwardNomination" WHERE status = 'PENDING_HQ'`
-      pendingInteractionCount = parseInt(awardRes[0].count, 10)
+      pendingAwardsCount = parseInt(awardRes[0].count, 10)
     } else if (session.role === 'UNIVERSITY_ADMIN') {
       const awardRes = await sql`SELECT COUNT(*) as count FROM "AwardNomination" WHERE status = 'PENDING_UNIVERSITY' AND "targetAdminUserId" = ${session.userId}`
       const absenceRes = await sql`SELECT COUNT(*) as count FROM "AbsenceList" WHERE status = 'SENT' AND "targetAdminUserId" = ${session.userId}`
-      pendingInteractionCount = parseInt(awardRes[0].count, 10) + parseInt(absenceRes[0].count, 10)
+      pendingAwardsCount = parseInt(awardRes[0].count, 10)
+      pendingAbsencesCount = parseInt(absenceRes[0].count, 10)
     }
   }
 
@@ -72,7 +74,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
           <ReadStatuteButton statute={statute} />
           {showInteractionPanel && (
-            <InteractionPanel squads={squads} hasVkLink={!!session.vkLink} userRole={session.role} pendingCount={pendingInteractionCount} />
+            <InteractionPanel squads={squads} hasVkLink={!!session.vkLink} userRole={session.role} pendingAwardsCount={pendingAwardsCount} pendingAbsencesCount={pendingAbsencesCount} />
           )}
           {session.role === 'DEVELOPER' && (
             <Link href="/dashboard/admin" style={{ position: 'relative', color: 'var(--text-primary)', textDecoration: 'none', background: 'rgba(59, 130, 246, 0.2)', padding: '8px 16px', borderRadius: '8px', fontSize: '0.9rem' }}>

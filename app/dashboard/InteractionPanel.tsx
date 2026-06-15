@@ -11,8 +11,9 @@ import { getPendingAbsenceLists } from '@/app/actions/absences'
 type Squad = { id: string, name: string }
 type Recipient = { id: string, fullName: string, role: string, squadName: string | null, hasVk: boolean }
 
-export default function InteractionPanel({ squads, hasVkLink, userRole, pendingCount = 0 }: { squads: Squad[], hasVkLink: boolean, userRole: string, pendingCount?: number }) {
+export default function InteractionPanel({ squads, hasVkLink, userRole, pendingAwardsCount = 0, pendingAbsencesCount = 0 }: { squads: Squad[], hasVkLink: boolean, userRole: string, pendingAwardsCount?: number, pendingAbsencesCount?: number }) {
   const isHQRole = userRole === 'HQ_COMMANDER' || userRole === 'HQ_COMMISSAR'
+  const pendingCount = pendingAwardsCount + pendingAbsencesCount
   
   const [isOpen, setIsOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
@@ -200,9 +201,9 @@ export default function InteractionPanel({ squads, hasVkLink, userRole, pendingC
                   style={{ position: 'relative', flex: 1, padding: '0.75rem', background: activeTab === 'awards' ? 'rgba(251, 191, 36, 0.15)' : 'transparent', border: 'none', borderBottom: activeTab === 'awards' ? '2px solid #fbbf24' : '2px solid transparent', color: activeTab === 'awards' ? '#fbbf24' : 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '0.85rem', transition: 'all 0.2s' }}
                 >
                   <Award size={14} /> Награждения
-                  {pendingCount > 0 && (
+                  {pendingAwardsCount > 0 && (
                     <span style={{ position: 'absolute', top: '8px', right: '8px', background: 'var(--danger-color)', color: 'white', fontSize: '0.7rem', fontWeight: 'bold', padding: '1px 5px', borderRadius: '10px' }}>
-                      {pendingCount}
+                      {pendingAwardsCount}
                     </span>
                   )}
                 </button>
@@ -210,9 +211,14 @@ export default function InteractionPanel({ squads, hasVkLink, userRole, pendingC
               {showAbsencesTab && (
                 <button 
                   onClick={() => handleTabChange('absences')}
-                  style={{ flex: 1, padding: '0.75rem', background: activeTab === 'absences' ? 'rgba(59, 130, 246, 0.15)' : 'transparent', border: 'none', borderBottom: activeTab === 'absences' ? '2px solid #3b82f6' : '2px solid transparent', color: activeTab === 'absences' ? '#3b82f6' : 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '0.85rem', transition: 'all 0.2s' }}
+                  style={{ position: 'relative', flex: 1, padding: '0.75rem', background: activeTab === 'absences' ? 'rgba(59, 130, 246, 0.15)' : 'transparent', border: 'none', borderBottom: activeTab === 'absences' ? '2px solid #3b82f6' : '2px solid transparent', color: activeTab === 'absences' ? '#3b82f6' : 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '0.85rem', transition: 'all 0.2s' }}
                 >
                   <Calendar size={14} /> Пропуски
+                  {pendingAbsencesCount > 0 && (
+                    <span style={{ position: 'absolute', top: '8px', right: '8px', background: 'var(--danger-color)', color: 'white', fontSize: '0.7rem', fontWeight: 'bold', padding: '1px 5px', borderRadius: '10px' }}>
+                      {pendingAbsencesCount}
+                    </span>
+                  )}
                 </button>
               )}
             </div>
