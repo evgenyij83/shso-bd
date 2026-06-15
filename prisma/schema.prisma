@@ -5,7 +5,7 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
   binaryTargets = ["native", "rhel-openssl-3.0.x", "debian-openssl-3.0.x"]
 }
 
@@ -23,49 +23,52 @@ model SystemSettings {
 model User {
   id              String           @id @default(cuid())
   uniqueCode      String           @unique
-  role            String           // "UNIVERSITY_ADMIN", "HQ_COMMANDER", "SQUAD_COMMANDER"
-  squadId         String?  
+  role            String // "UNIVERSITY_ADMIN", "HQ_COMMANDER", "SQUAD_COMMANDER"
+  squadId         String?
   squad           Squad?           @relation(fields: [squadId], references: [id])
   sessionToken    String?
   fullName        String?
   vkLink          String?
   accountRequests AccountRequest[]
+  Event           Event[]
 }
 
 model Squad {
-  id              String           @id @default(cuid())
-  name            String           @unique
-  description     String?
-  workType        String?
-  workPlace       String?
-  workSchedule    String?
-  workPeriod      String?
-  chatLink        String?
-  fighterLimit    Int?
-  users           User[]
-  fighters        Fighter[]
-  applications    Application[]
-  accountRequests AccountRequest[]
+  id               String             @id @default(cuid())
+  name             String             @unique
+  description      String?
+  workType         String?
+  workPlace        String?
+  workSchedule     String?
+  workPeriod       String?
+  chatLink         String?
+  fighterLimit     Int?
+  users            User[]
+  fighters         Fighter[]
+  applications     Application[]
+  accountRequests  AccountRequest[]
   awardNominations AwardNomination[]
-  incidentReports IncidentReport[]
-  absenceLists    AbsenceList[]
+  incidentReports  IncidentReport[]
+  absenceLists     AbsenceList[]
+  EventParticipant EventParticipant[]
+  EventSubmission  EventSubmission[]
 }
 
 model AccountRequest {
-  id              String   @id @default(cuid())
-  requestedRole   String
-  squadId         String?
-  squad           Squad?   @relation(fields: [squadId], references: [id])
-  fullName        String
-  faculty         String?
-  studyGroup      String?
-  course          Int?
-  educationForm   String?
-  phone           String?
-  vkLink          String?
+  id                String   @id @default(cuid())
+  requestedRole     String
+  squadId           String?
+  squad             Squad?   @relation(fields: [squadId], references: [id])
+  fullName          String
+  faculty           String?
+  studyGroup        String?
+  course            Int?
+  educationForm     String?
+  phone             String?
+  vkLink            String?
   requestedByUserId String
-  requestedBy     User     @relation(fields: [requestedByUserId], references: [id])
-  createdAt       DateTime @default(now())
+  requestedBy       User     @relation(fields: [requestedByUserId], references: [id])
+  createdAt         DateTime @default(now())
 }
 
 model IdentifierRequest {
@@ -79,17 +82,18 @@ model IdentifierRequest {
 }
 
 model Fighter {
-  id            String  @id @default(cuid())
-  squadId       String
-  squad         Squad   @relation(fields: [squadId], references: [id], onDelete: Cascade)
-  position      String  // "Боец", "Командир", "Комиссар"
-  fullName      String
-  faculty       String
-  studyGroup    String
-  course        Int
-  educationForm String  // "Бюджет", "Целевое", "Коммерческое"
-  phone         String
-  vkLink        String?
+  id               String             @id @default(cuid())
+  squadId          String
+  squad            Squad              @relation(fields: [squadId], references: [id], onDelete: Cascade)
+  position         String // "Боец", "Командир", "Комиссар"
+  fullName         String
+  faculty          String
+  studyGroup       String
+  course           Int
+  educationForm    String // "Бюджет", "Целевое", "Коммерческое"
+  phone            String
+  vkLink           String?
+  EventParticipant EventParticipant[]
 }
 
 model Application {
@@ -107,15 +111,15 @@ model Application {
 }
 
 model AwardNomination {
-  id                String          @id @default(cuid())
-  squadId           String
-  squad             Squad           @relation(fields: [squadId], references: [id])
-  nominatedByUserId String
-  status            String          @default("PENDING_HQ") // PENDING_HQ, PENDING_UNIVERSITY, APPROVED
+  id                 String         @id @default(cuid())
+  squadId            String
+  squad              Squad          @relation(fields: [squadId], references: [id])
+  nominatedByUserId  String
+  status             String         @default("PENDING_HQ") // PENDING_HQ, PENDING_UNIVERSITY, APPROVED
   approvedByHqUserId String?
   targetAdminUserId  String?
-  nominees          AwardNominee[]
-  createdAt         DateTime        @default(now())
+  nominees           AwardNominee[]
+  createdAt          DateTime       @default(now())
 }
 
 model AwardNominee {
@@ -130,13 +134,13 @@ model AwardNominee {
 }
 
 model IncidentReport {
-  id                String   @id @default(cuid())
-  squadId           String
-  squad             Squad    @relation(fields: [squadId], references: [id])
-  reportedByUserId  String
-  description       String
-  involvedNames     String   // JSON array of fighter names
-  createdAt         DateTime @default(now())
+  id               String   @id @default(cuid())
+  squadId          String
+  squad            Squad    @relation(fields: [squadId], references: [id])
+  reportedByUserId String
+  description      String
+  involvedNames    String // JSON array of fighter names
+  createdAt        DateTime @default(now())
 }
 
 model AbsenceList {
@@ -164,3 +168,39 @@ model AbsenceEntry {
   dayTo         Int
 }
 
+model Event {
+  id           String             @id @default(cuid())
+  title        String
+  description  String
+  requirements String
+  chatLink     String?
+  createdAt    DateTime           @default(now())
+  createdById  String
+  createdBy    User               @relation(fields: [createdById], references: [id])
+  participants EventParticipant[]
+  submissions  EventSubmission[]
+}
+
+model EventParticipant {
+  id        String   @id @default(cuid())
+  eventId   String
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  fighterId String
+  fighter   Fighter  @relation(fields: [fighterId], references: [id], onDelete: Cascade)
+  squadId   String
+  squad     Squad    @relation(fields: [squadId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([eventId, fighterId])
+}
+
+model EventSubmission {
+  id        String   @id @default(cuid())
+  eventId   String
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  squadId   String
+  squad     Squad    @relation(fields: [squadId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([eventId, squadId])
+}

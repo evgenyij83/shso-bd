@@ -126,7 +126,7 @@ export async function editFighter(formData: FormData) {
 export async function transferFighter(fighterId: string, newSquadId: string) {
   const session = await getSession()
   if (!session) return { error: 'Не авторизован' }
-  if (session.role !== 'HQ_COMMANDER' && session.role !== 'HQ_COMMISSAR' && session.role !== 'DEVELOPER') {
+  if (session.role !== 'UNIVERSITY_ADMIN' && session.role !== 'DEVELOPER') {
     return { error: 'Недостаточно прав для перевода' }
   }
 
@@ -151,7 +151,8 @@ export async function transferFighter(fighterId: string, newSquadId: string) {
     const newCmds = await sql`SELECT "vkLink" FROM "User" WHERE "squadId" = ${newSquadId} AND role IN ('SQUAD_COMMANDER', 'SQUAD_COMMISSAR') AND "vkLink" IS NOT NULL`
     
     const { sendVkMessage } = await import('@/lib/vkBot')
-    const msg = `${session.fullName} переводит бойца ${fighter.fullName} в отряд ${newSquadResult[0]?.name}`
+    const senderName = session.role === 'DEVELOPER' ? 'KiritoNagibator' : session.fullName || 'Руководитель'
+    const msg = `${senderName} переводит бойца ${fighter.fullName} в отряд ${newSquadResult[0]?.name}`
 
     for (const u of oldCmds as any[]) {
       await sendVkMessage(u.vkLink, msg)

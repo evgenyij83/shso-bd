@@ -66,7 +66,7 @@ export default function ClientFighterList({ fighters, squadId, canEdit, userRole
   }
 
   const canAddCommander = userRole === 'DEVELOPER' || userRole === 'UNIVERSITY_ADMIN' || userRole === 'HQ_COMMANDER'
-  const canTransfer = userRole === 'DEVELOPER' || userRole === 'HQ_COMMANDER' || userRole === 'HQ_COMMISSAR'
+  const canTransfer = userRole === 'DEVELOPER' || userRole === 'UNIVERSITY_ADMIN'
 
   return (
     <div>

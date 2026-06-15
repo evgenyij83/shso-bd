@@ -76,6 +76,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
           {showInteractionPanel && (
             <InteractionPanel squads={squads} hasVkLink={!!session.vkLink} userRole={session.role} pendingAwardsCount={pendingAwardsCount} pendingAbsencesCount={pendingAbsencesCount} />
           )}
+          <Link href="/dashboard/events" style={{ color: 'var(--text-primary)', textDecoration: 'none', background: 'rgba(16, 185, 129, 0.2)', padding: '8px 16px', borderRadius: '8px', fontSize: '0.9rem' }}>
+            Мероприятия
+          </Link>
           {session.role === 'DEVELOPER' && (
             <Link href="/dashboard/admin" style={{ position: 'relative', color: 'var(--text-primary)', textDecoration: 'none', background: 'rgba(59, 130, 246, 0.2)', padding: '8px 16px', borderRadius: '8px', fontSize: '0.9rem' }}>
               Панель управления

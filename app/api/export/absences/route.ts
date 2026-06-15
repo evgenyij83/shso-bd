@@ -121,32 +121,34 @@ export async function GET(request: NextRequest) {
                     borders: noBorders,
                     width: { size: 5000, type: WidthType.DXA },
                     children: [
-                      new Paragraph({ children: [new TextRun({ text: 'ФГБОУ ВО СГУПС', bold: true, size: 24 })] }),
+                      new Paragraph({ children: [new TextRun({ text: 'ФГБОУ ВО ПГУПС', bold: true, size: 24 })] }),
                       new Paragraph({ children: [new TextRun({ text: 'Центр карьеры Управления по', size: 24 })] }),
                       new Paragraph({ children: [new TextRun({ text: 'связям с производством', size: 24 })], spacing: { after: 200 } }),
                       new Paragraph({ children: [new TextRun({ text: 'ДОКЛАДНАЯ ЗАПИСКА', bold: true, size: 24 })], alignment: AlignmentType.CENTER, spacing: { after: 200 } }),
-                      new Paragraph({ children: [new TextRun({ text: '№ ___________________', size: 24 })], spacing: { after: 200 } }),
-                      new Paragraph({ children: [new TextRun({ text: 'О пропуске занятий по', bold: true, size: 24 })] }),
-                      new Paragraph({ children: [new TextRun({ text: 'уважительной причине', bold: true, size: 24 })], spacing: { after: 200 } }),
+                      new Paragraph({ children: [new TextRun({ text: '_________ № _________', size: 24 })], alignment: AlignmentType.CENTER, spacing: { after: 200 } }),
+                      new Paragraph({ children: [new TextRun({ text: '┏                                                                 ┓', size: 24 })] }),
+                      new Paragraph({ children: [new TextRun({ text: 'О пропуске занятий по', bold: true, size: 24 })], alignment: AlignmentType.CENTER }),
+                      new Paragraph({ children: [new TextRun({ text: 'уважительной причине', bold: true, size: 24 })], alignment: AlignmentType.CENTER }),
+                      new Paragraph({ children: [new TextRun({ text: '┗                                                                 ┛', size: 24 })], spacing: { after: 200 } }),
                     ]
                   }),
                   new TableCell({
                     borders: noBorders,
                     width: { size: 4000, type: WidthType.DXA },
                     children: [
-                      new Paragraph({ children: [new TextRun({ text: 'Деканам факультетов', size: 24 })], alignment: AlignmentType.RIGHT })
+                      new Paragraph({ children: [new TextRun({ text: 'Деканам факультетов', size: 24 })], alignment: AlignmentType.RIGHT, spacing: { after: 600 } }),
+                      new Paragraph({
+                        children: [
+                          new TextRun({ text: `\tВ связи с участием следующих обучающихся в студенческом отряде «${list.squadName}», прошу считать пропуск занятий в указанные даты по уважительной причине:`, size: 24 })
+                        ],
+                        alignment: AlignmentType.JUSTIFIED,
+                        spacing: { after: 200 }
+                      })
                     ]
                   })
                 ]
               })
             ]
-          }),
-          new Paragraph({
-            children: [
-              new TextRun({ text: `\tВ связи с участием следующих обучающихся в студенческом отряде «${list.squadName}», прошу считать пропуск занятий в указанные даты по уважительной причине:`, size: 24 })
-            ],
-            alignment: AlignmentType.JUSTIFIED,
-            spacing: { after: 200 }
           }),
           new Table({
             width: { size: 100, type: WidthType.PERCENTAGE },
@@ -166,7 +168,7 @@ export async function GET(request: NextRequest) {
           }),
           new Paragraph({
             children: [
-              new TextRun({ text: 'по связям с производством\t\t\t\t\tН.А. Баранов', size: 24 })
+              new TextRun({ text: 'по связям с производством\t\t\t\t\tИ.А. Баранов', size: 24 })
             ],
             alignment: AlignmentType.LEFT,
           }),
