@@ -20,7 +20,8 @@
     "pizzip": "^3.2.0",
     "postgres": "^3.4.9",
     "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react-dom": "19.2.4",
+    "ssh2": "^1.17.0"
   },
   "devDependencies": {
     "@prisma/client": "^5.22.0",

@@ -10,6 +10,14 @@ import InteractionPanel from './InteractionPanel'
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await getSession()
   if (!session) redirect('/')
+
+  const settings = await sql`SELECT value FROM "SystemSettings" WHERE key = 'MAINTENANCE_MODE'`
+  const isMaintenance = settings.length > 0 && settings[0].value === 'true'
+
+  if (isMaintenance && session.role !== 'DEVELOPER') {
+    await logout()
+    redirect('/')
+  }
   
   const roleLabels: Record<string, string> = {
     UNIVERSITY_ADMIN: 'Руководство Университета',

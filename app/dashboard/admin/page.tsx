@@ -7,12 +7,16 @@ import AdminForms from './AdminForms'
 import StatuteEditor from './StatuteEditor'
 import AccountRequests from './AccountRequests'
 import IdentifierRequests from './IdentifierRequests'
+import MaintenanceToggle from './MaintenanceToggle'
+import { getMaintenanceStatus } from '@/app/actions/maintenance'
 
 export default async function AdminPage() {
   const session = await getSession()
   if (!session || session.role !== 'DEVELOPER') {
     redirect('/dashboard')
   }
+
+  const maintenanceStatus = await getMaintenanceStatus()
 
   const squads = await sql`SELECT * FROM "Squad" ORDER BY name ASC` as any[]
   
@@ -48,6 +52,8 @@ export default async function AdminPage() {
         <Link href="/dashboard" style={{ color: 'var(--text-secondary)', textDecoration: 'none', display: 'flex', alignItems: 'center' }}><ArrowLeft size={24} /></Link>
         <h2>Панель Разработчика</h2>
       </div>
+
+      <MaintenanceToggle initialStatus={maintenanceStatus} />
 
       <AccountRequests requests={accountRequests} />
       <IdentifierRequests requests={identifierRequests} />
